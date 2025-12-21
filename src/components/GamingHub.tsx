@@ -16,7 +16,7 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { CreateGamingSessionModal } from './CreateGamingSessionModal';
 import { GamingSessionCard } from './GamingSessionCard';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { GlobalSearch } from './GlobalSearch';
 import { NotificationInbox } from './NotificationInbox';

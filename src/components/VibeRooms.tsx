@@ -6,7 +6,7 @@ import { Badge } from './ui/badge';
 import { GlassCard } from './GlassCard';
 import { CreateRoomDialog } from './CreateRoomDialog';
 import { useVibeRooms } from '../lib/hooks/useVibeRooms';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface VibeRoom {
   id: string;

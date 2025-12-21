@@ -7,7 +7,7 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { photosService, Photo, Album } from '../services/photosService';
 
 interface PhotoAlbumProps {

@@ -3,7 +3,7 @@ import { X, Award, Calendar, Clock, Users, Star, CheckCircle, TrendingUp, Target
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface Coach {
   id: string;

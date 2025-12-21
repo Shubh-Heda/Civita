@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Heart, MessageCircle, Download, Share2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/button';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface Photo {
   id: string;

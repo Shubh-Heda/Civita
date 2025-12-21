@@ -4,7 +4,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface HelpSupportProps {
   onNavigate: (page: 'dashboard' | 'events-dashboard' | 'party-dashboard' | 'profile' | 'sports-community' | 'cultural-community' | 'party-community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'chat' | 'help', turfId?: string, matchId?: string) => void;

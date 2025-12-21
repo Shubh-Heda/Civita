@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { AnimatedBackground } from './AnimatedBackground';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface CreateMatchPlanProps {
   onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'chat' | 'availability', turfId?: string, matchId?: string) => void;

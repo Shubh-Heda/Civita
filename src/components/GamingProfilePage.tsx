@@ -3,7 +3,7 @@ import { ArrowLeft, Edit, Save, X, Trophy, Flame, Users, Gamepad2, Star, Award, 
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface GamingProfilePageProps {
   onNavigate: (page: string) => void;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LogOut, PauseCircle, BellOff, Heart, AlertTriangle, X } from 'lucide-react';
 import { Button } from './ui/button';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface SoftExitMenuProps {
   groupName: string;

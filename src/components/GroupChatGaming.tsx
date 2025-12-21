@@ -3,7 +3,7 @@ import { ArrowLeft, Send, Plus, X, Search, Users, Gamepad2, Trophy } from 'lucid
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface GroupChatGamingProps {
   onNavigate: (page: string) => void;

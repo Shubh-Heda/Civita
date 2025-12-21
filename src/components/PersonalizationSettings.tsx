@@ -5,7 +5,7 @@ import { personalizationService, UserTheme, UserPreferences } from '../services/
 import { achievementService, AvatarFrame } from '../services/achievementService';
 import { useTheme } from './ThemeProvider';
 import { Button } from './ui/button';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface PersonalizationSettingsProps {
   userId: string;
