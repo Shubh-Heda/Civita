@@ -1,0 +1,4 @@
+{
+  "enabled": true,
+  "reason": "Backend integration with Supabase for data persistence and real-time features"
+}
