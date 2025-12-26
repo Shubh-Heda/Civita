@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { Users, Heart, Shield, TrendingUp, CheckCircle, UserPlus, Clock, Sparkles, ArrowRight, Star, Zap, PartyPopper } from 'lucide-react';
 
@@ -6,7 +6,7 @@ interface AventoDemoProps {
   isPlaying: boolean;
 }
 
-export function AventoDemo({ isPlaying }: AventoDemoProps) {
+export default function AventoDemo({ isPlaying }: AventoDemoProps) {
   const [currentScene, setCurrentScene] = useState(0);
   const [progress, setProgress] = useState(0);
 

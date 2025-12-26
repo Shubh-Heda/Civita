@@ -526,7 +526,7 @@ function AppContent() {
     setPendingCategory(null);
   };
 
-  const handleCategorySelect = (category: 'turf' | 'events' | 'parties' | 'gaming') => {
+  const handleCategorySelect = (category: 'sports' | 'events' | 'parties' | 'gaming') => {
     console.log('🎮 Category selected:', category);
     console.log('📍 Current page before navigation:', currentPage);
     
@@ -537,7 +537,7 @@ function AppContent() {
       return; // Exit early to prevent other logic
     }
     
-    if (category === 'turf') {
+    if (category === 'sports') {
       setCurrentCategory('sports');
       setCurrentPage('dashboard');
     } else if (category === 'events') {

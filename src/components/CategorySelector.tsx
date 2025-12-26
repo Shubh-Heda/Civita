@@ -5,7 +5,7 @@ import categoryGridImage from 'figma:asset/f51cc543d73d57a7ec6a7452b72d744ecc45c
 
 interface CategorySelectorProps {
   onNavigate: (page: string) => void;
-  onCategorySelect: (category: 'turf' | 'events' | 'parties' | 'gaming') => void;
+  onCategorySelect: (category: 'sports' | 'events' | 'parties' | 'gaming') => void;
   userName?: string;
 }
 
@@ -53,7 +53,7 @@ export function CategorySelector({ onNavigate, onCategorySelect, userName = 'Fri
           <div className="grid md:grid-cols-2 gap-8 mb-8">
             {/* Sports & Turf */}
             <button
-              onClick={() => onCategorySelect('turf')}
+              onClick={() => onCategorySelect('sports')}
               className="group relative overflow-hidden rounded-3xl bg-white border-2 border-slate-200 hover:border-cyan-400 transition-all hover:shadow-2xl hover:scale-105 text-left"
             >
               <div className="relative h-64">

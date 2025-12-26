@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import UploadPhoto from './UploadPhoto';
 import {
   ArrowLeft, Upload, Heart, MessageCircle, Share2, Eye, Download,
   Trash2, Edit2, Plus, Search, X, Star
@@ -9,6 +10,8 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
 import { photosService, Photo, Album } from '../services/photosService';
+import { supabaseEnabled } from '../lib/supabaseClient';
+import { createAlbumRecord, createPhotoRecord } from '../lib/db';
 
 interface PhotoAlbumProps {
   category: 'sports' | 'events' | 'parties' | 'gaming';
@@ -20,6 +23,7 @@ export function PhotoAlbum({ category, onNavigate }: PhotoAlbumProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUpload, setShowUpload] = useState(false);
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
 
   const albums = photosService.getAlbumsByMatch('');
   const filteredAlbums = albums.filter(album =>
@@ -154,29 +158,40 @@ export function PhotoAlbum({ category, onNavigate }: PhotoAlbumProps) {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {selectedAlbum.photos.map((photo, idx) => (
-                    <motion.div
-                      key={idx}
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => setSelectedPhoto(photo)}
-                      className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl overflow-hidden cursor-pointer relative group"
-                    >
-                      <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-slate-200 to-slate-300">
-                        {photo.url}
-                      </div>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                        <button className="p-2 bg-white rounded-lg hover:bg-slate-100">
-                          <Heart className="w-5 h-5 text-red-500" />
-                        </button>
-                        <button className="p-2 bg-white rounded-lg hover:bg-slate-100">
-                          <MessageCircle className="w-5 h-5 text-blue-500" />
-                        </button>
-                      </div>
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-semibold text-slate-900">
-                        {photo.likes} likes
-                      </div>
-                    </motion.div>
-                  ))}
+                  {selectedAlbum.photos.map((photo, idx) => {
+                    const isImage = typeof photo.url === 'string' && (photo.url.startsWith('http') || photo.url.startsWith('data:') || photo.url.startsWith('blob:'));
+                    return (
+                      <motion.div
+                        key={idx}
+                        whileHover={{ scale: 1.05 }}
+                        onClick={() => setSelectedPhoto(photo)}
+                        className="aspect-square rounded-xl overflow-hidden cursor-pointer relative group bg-slate-100"
+                      >
+                        {isImage ? (
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                            <img src={photo.url} alt={photo.caption || `photo-${idx}`} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-slate-200 to-slate-300">
+                            {photo.url}
+                          </div>
+                        )}
+
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                          <button className="p-2 bg-white rounded-lg hover:bg-slate-100">
+                            <Heart className="w-5 h-5 text-red-500" />
+                          </button>
+                          <button className="p-2 bg-white rounded-lg hover:bg-slate-100">
+                            <MessageCircle className="w-5 h-5 text-blue-500" />
+                          </button>
+                        </div>
+
+                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-semibold text-slate-900">
+                          {photo.likes} likes
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -206,11 +221,19 @@ export function PhotoAlbum({ category, onNavigate }: PhotoAlbumProps) {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Upload Photos</label>
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-slate-400 transition-colors">
-                  <Upload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                  <p className="text-slate-600">Drag and drop photos here</p>
-                  <p className="text-sm text-slate-500">or click to browse</p>
-                </div>
+                <UploadPhoto
+                  onUploaded={(url) => setUploadedUrls(prev => [...prev, url])}
+                />
+
+                {uploadedUrls.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {uploadedUrls.map((u, i) => (
+                      <div key={i} className="rounded-lg overflow-hidden border bg-slate-800">
+                        <img src={u} alt={`uploaded-${i}`} className="w-full h-24 object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -226,9 +249,50 @@ export function PhotoAlbum({ category, onNavigate }: PhotoAlbumProps) {
 
             <div className="flex gap-3">
               <Button
-                onClick={() => {
+                onClick={async () => {
+                  // Create album with uploaded photos
+                  const title = (document.querySelector('input[placeholder]') as HTMLInputElement)?.value || 'New Album';
+                  const description = (document.querySelector('textarea') as HTMLTextAreaElement)?.value || '';
+
+                  if (supabaseEnabled) {
+                    try {
+                      const album = await createAlbumRecord({ owner_id: null, title, description, cover_photo: uploadedUrls[0] || null, total_photos: uploadedUrls.length });
+                      for (const u of uploadedUrls) {
+                        await createPhotoRecord({ album_id: album.id, owner_id: null, public_url: u, caption: '' });
+                      }
+                      toast.success('Album created and persisted to Supabase! 🎉');
+                    } catch (err: any) {
+                      console.error('DB persist error', err);
+                      toast.error('Album created locally, but failed to persist to DB.');
+                    }
+                  } else {
+                    const photos = uploadedUrls.map((url, idx) => ({
+                      matchId: '',
+                      userId: 'user_demo',
+                      url,
+                      caption: '',
+                      uploadedAt: new Date().toISOString(),
+                      likes: 0,
+                      comments: [],
+                      tags: []
+                    }));
+
+                    photosService.createAlbum({
+                      matchId: '',
+                      title,
+                      description,
+                      photos,
+                      createdAt: new Date().toISOString(),
+                      coverPhoto: photos.length > 0 ? '📸' : '🖼️',
+                      totalPhotos: photos.length,
+                      views: 0
+                    });
+
+                    toast.success('Album created locally (demo mode) 🎉');
+                  }
+
                   setShowUpload(false);
-                  toast.success('Album created successfully! 🎉');
+                  setUploadedUrls([]);
                 }}
                 className="flex-1 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white"
               >
@@ -324,8 +388,12 @@ export function PhotoAlbum({ category, onNavigate }: PhotoAlbumProps) {
               className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             >
               {/* Image */}
-              <div className="w-full h-80 bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-9xl">
-                {selectedPhoto.url}
+              <div className="w-full h-80 flex items-center justify-center bg-slate-100">
+                {typeof selectedPhoto.url === 'string' && (selectedPhoto.url.startsWith('http') || selectedPhoto.url.startsWith('data:') || selectedPhoto.url.startsWith('blob:')) ? (
+                  <img src={selectedPhoto.url} alt={selectedPhoto.caption || 'photo'} className="w-full h-full object-contain" />
+                ) : (
+                  <div className="text-9xl">{selectedPhoto.url}</div>
+                )}
               </div>
 
               {/* Content */}
