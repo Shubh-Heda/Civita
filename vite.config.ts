@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig(({ command }) => ({
-  base: command === 'serve' ? '/' : '/Avento/',
+  base: command === 'serve' ? '/' : '/',
   plugins: [react()],
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -56,7 +56,7 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     target: 'esnext',
-    outDir: 'build',
+    outDir: 'docs',
   },
   server: {
     port: 3000,
