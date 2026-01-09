@@ -17,6 +17,8 @@ import { Badge } from './ui/badge';
 import { AventoLogo } from './AventoLogo';
 import { CreateGamingSessionModal } from './CreateGamingSessionModal';
 import { GamingSessionCard } from './GamingSessionCard';
+import { UpcomingItemsSection } from './UpcomingItemsSection';
+import { FirstTimeUserGuide } from './FirstTimeUserGuide';
 import { toast } from 'sonner';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { GlobalSearch } from './GlobalSearch';
@@ -35,6 +37,7 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
   const [userBio, setUserBio] = useState('Pro gamer | FIFA Champion | Making friends through gaming 🎮');
   const [favoriteGames, setFavoriteGames] = useState(['FIFA 24', 'Valorant', 'COD MW3']);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'home' | 'clubs' | 'sessions' | 'tournaments' | 'profile'>('home');
   const [gamingClubs, setGamingClubs] = useState<GamingClub[]>([]);
@@ -51,6 +54,12 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
   useEffect(() => {
     loadData();
     gamingService.initMockTournaments();
+    
+    // Check if user is new (first time visiting gaming hub)
+    const hasSeenGuide = localStorage.getItem('avento_gaming_guide_completed');
+    if (!hasSeenGuide) {
+      setShowFirstTimeGuide(true);
+    }
   }, []);
 
   const loadData = () => {
@@ -130,6 +139,13 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden pb-20 bg-white">
+      {/* First Time User Guide */}
+      {showFirstTimeGuide && (
+        <FirstTimeUserGuide 
+          onClose={() => setShowFirstTimeGuide(false)}
+          category="gaming"
+        />
+      )}
       
       {/* Content Wrapper */}
       <div className="relative z-10">
@@ -150,6 +166,16 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
 
             {/* Middle Navigation Buttons */}
             <div className="hidden lg:flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowFirstTimeGuide(true)}
+                className="gap-2 hover:bg-cyan-50"
+                title="Show Tutorial"
+              >
+                <HelpCircle className="w-4 h-4" />
+                Guide
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -458,6 +484,28 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
                 <span className="font-semibold text-center relative z-10">Events</span>
               </motion.button>
             </div>
+
+            {/* Your Upcoming Gaming Sessions */}
+            <UpcomingItemsSection
+              items={gamingSessions.map(session => ({
+                id: session.id,
+                title: session.title || `${session.game} Session`,
+                venueName: session.clubName || 'Gaming Club',
+                date: session.date,
+                time: session.time,
+                category: session.game,
+                status: 'upcoming' as const,
+                amount: session.entryFee,
+                location: session.location,
+                participants: session.currentPlayers,
+                maxParticipants: session.maxPlayers,
+                image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop'
+              }))}
+              category="gaming"
+              onNavigateToChat={(sessionId) => onNavigate('gaming-chat', sessionId)}
+              onNavigateToFind={() => setActiveTab('clubs')}
+              onNavigateToCreate={() => setShowCreateModal(true)}
+            />
 
             {/* Recent Activity & Achievements */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1183,7 +1231,9 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
           onSessionCreated={(session) => {
             setGamingSessions([...gamingSessions, session]);
             setShowCreateModal(false);
-            toast.success('Gaming session created! 🎮');
+            toast.success('Gaming Session Created! 🎮', {
+              description: `${session.gameName || 'Session'} at ${session.clubName} is ready!`,
+            });
           }}
         />
       )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, Users, Heart, Sparkles, User, MessageCircle, Calendar, TrendingUp, Star, MapPin, Shield, GraduationCap, Award, HelpCircle, CreditCard, Map, Trophy, Camera, Video, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { AventoLogo } from './AventoLogo';
@@ -14,6 +14,7 @@ import { NotificationInbox } from './NotificationInbox';
 import { MatchCountdownTimer } from './MatchCountdownTimer';
 import { MatchCardSkeleton } from './LoadingSkeleton';
 import { MenuDropdown } from './MenuDropdown';
+import { FirstTimeUserGuide } from './FirstTimeUserGuide';
 
 const sportsHeroImage = 'https://images.unsplash.com/photo-1509077613385-f89402467146?q=80&w=1940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
@@ -48,9 +49,18 @@ interface DashboardProps {
 export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(false);
   
   // Get only upcoming matches
   const upcomingMatches = matches.filter(m => m.status === 'upcoming');
+
+  // Check if user is new (first time visiting)
+  useEffect(() => {
+    const hasSeenGuide = localStorage.getItem('avento_sports_guide_completed');
+    if (!hasSeenGuide) {
+      setShowFirstTimeGuide(true);
+    }
+  }, []);
 
   const handlePayNow = (match: Match) => {
     setSelectedMatch(match);
@@ -59,6 +69,13 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      {/* First Time User Guide */}
+      {showFirstTimeGuide && (
+        <FirstTimeUserGuide 
+          onClose={() => setShowFirstTimeGuide(false)}
+          category="sports"
+        />
+      )}
       {/* STUNNING Background Image - Friends playing sports together */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -100,6 +117,15 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
               </div>
               
               <div className="flex items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setShowFirstTimeGuide(true)}
+                  className="gap-2 hover:bg-purple-50"
+                  title="Show Tutorial"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  <span className="hidden lg:inline">Guide</span>
+                </Button>
                 <Button 
                   variant="ghost" 
                   onClick={() => onNavigate('sports-chat')}

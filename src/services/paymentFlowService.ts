@@ -447,6 +447,53 @@ class PaymentFlowService {
       isPaymentWindowActive: matchState.paymentWindowEnd && new Date() < matchState.paymentWindowEnd,
     };
   }
+
+  /**
+   * Schedule reminders for all players in a match
+   * Called when soft lock is triggered
+   */
+  schedulePaymentReminders(matchId: string, matchState: MatchPaymentState): void {
+    try {
+      // Import here to avoid circular dependency
+      const { deadlineReminderService } = require('./deadlineReminderService');
+      
+      if (!matchState.paymentWindowEnd) {
+        console.warn('No payment window end date set for reminders');
+        return;
+      }
+
+      // Schedule reminders for all players
+      matchState.playerPayments.forEach(payment => {
+        deadlineReminderService.createReminder(
+          matchId,
+          payment.userId,
+          matchState.paymentWindowEnd!
+        );
+      });
+
+      console.log(`[PaymentFlow] Reminders scheduled for ${matchState.playerPayments.length} players`);
+    } catch (error) {
+      console.error('Failed to schedule payment reminders:', error);
+    }
+  }
+
+  /**
+   * Cancel all reminders for a match
+   * Called when match is cancelled or completed
+   */
+  cancelPaymentReminders(matchId: string, matchState: MatchPaymentState): void {
+    try {
+      const { deadlineReminderService } = require('./deadlineReminderService');
+      
+      matchState.playerPayments.forEach(payment => {
+        deadlineReminderService.cancelReminders(matchId, payment.userId);
+      });
+
+      console.log(`[PaymentFlow] Reminders cancelled for match ${matchId}`);
+    } catch (error) {
+      console.error('Failed to cancel payment reminders:', error);
+    }
+  }
 }
 
 export const paymentFlowService = new PaymentFlowService();

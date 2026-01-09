@@ -137,8 +137,23 @@ export function WhatsAppChat({ onNavigate, matchId }: WhatsAppChatProps) {
         // Auto-select match room if matchId provided
         if (matchId) {
           const matchRoom = userRooms.find(r => r.related_id === matchId);
-          if (matchRoom) setSelectedRoom(matchRoom);
-        } else if (userRooms.length > 0) {
+          if (matchRoom) {
+            setSelectedRoom(matchRoom);
+            console.log('Found match room:', matchRoom);
+            return;
+          } else {
+            console.warn('Match room not found for matchId:', matchId);
+            // Try to find by room name containing matchId as fallback
+            const fallbackRoom = userRooms.find(r => r.id.includes(matchId));
+            if (fallbackRoom) {
+              setSelectedRoom(fallbackRoom);
+              return;
+            }
+          }
+        }
+        
+        // Default to first room if no matchId or match not found
+        if (userRooms.length > 0) {
           setSelectedRoom(userRooms[0]);
         }
       } else {

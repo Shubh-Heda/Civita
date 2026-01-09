@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Filter, Users, Heart, Sparkles, User, MessageCircle, Calendar, TrendingUp, Star, MapPin, PartyPopper, HelpCircle, Ticket, Clock, Zap, Map, Trophy, Camera, Video, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
+import { UpcomingItemsSection } from './UpcomingItemsSection';
 import { AventoLogo } from './AventoLogo';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -39,6 +40,24 @@ export function PartyDashboard({ onNavigate, userProfile: userProfileProp, onBoo
     location: 'Ahmedabad',
     joinDate: '2025-01-01'
   };
+
+  // Mock upcoming parties data
+  const [upcomingParties] = useState([
+    {
+      id: 'party-1',
+      title: 'Weekend Social Mixer',
+      venueName: 'Skybar Lounge',
+      date: '2025-11-18',
+      time: '9:00 PM',
+      category: 'Social',
+      status: 'upcoming' as const,
+      amount: 1200,
+      location: 'Ahmedabad',
+      participants: 45,
+      maxParticipants: 80,
+      image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop'
+    }
+  ]);
 
   const categories = [
     { id: 'all', label: 'All Parties', icon: Sparkles },
@@ -257,6 +276,15 @@ export function PartyDashboard({ onNavigate, userProfile: userProfileProp, onBoo
           </div>
 
           {/* Category Filter */}
+                    {/* Your Upcoming Parties Section */}
+                    <UpcomingItemsSection
+                      items={upcomingParties}
+                      category="party"
+                      onNavigateToChat={(partyId) => onNavigate('party-chat', undefined, partyId)}
+                      onNavigateToFind={() => {}}
+                      onNavigateToCreate={() => onBookParty && onBookParty({ title: 'New Party' })}
+                    />
+
           <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
             {categories.map(cat => {
               const Icon = cat.icon;

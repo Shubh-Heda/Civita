@@ -43,3 +43,4 @@ lerna-debug.log*
 # OS files
 Thumbs.db
 desktop.ini
+.vercel

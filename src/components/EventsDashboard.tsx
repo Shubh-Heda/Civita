@@ -12,6 +12,7 @@ import { GlobalSearch } from './GlobalSearch';
 import { NotificationInbox } from './NotificationInbox';
 import { MatchCountdownTimer } from './MatchCountdownTimer';
 import { MenuDropdown } from './MenuDropdown';
+import { UpcomingItemsSection } from './UpcomingItemsSection';
 import eventsBackgroundImage from 'figma:asset/5920481c5d9f82bea22cf2d117dfcaeb8e4a39c7.png';
 import eventsHeroImage from 'figma:asset/a405f329b597be91eeb4b4ea02415753c919ddd2.png';
 
@@ -31,6 +32,24 @@ interface EventsDashboardProps {
 
 export function EventsDashboard({ onNavigate, userProfile, onBookEvent }: EventsDashboardProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Mock upcoming events data
+  const [upcomingEvents] = useState([
+    {
+      id: 'evt-1',
+      title: 'Jazz Under the Stars',
+      venueName: 'Phoenix Marketcity Amphitheater',
+      date: '2025-11-16',
+      time: '7:00 PM',
+      category: 'Music',
+      status: 'upcoming' as const,
+      amount: 499,
+      location: 'Ahmedabad',
+      participants: 234,
+      maxParticipants: 300,
+      image: 'https://images.unsplash.com/photo-1557750674-5e01bafc85c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800'
+    }
+  ]);
 
   const categories = [
     { id: 'all', label: 'All Events', icon: Sparkles },
@@ -275,6 +294,15 @@ export function EventsDashboard({ onNavigate, userProfile, onBookEvent }: Events
               );
             })}
           </div>
+
+          {/* Your Upcoming Events Section */}
+          <UpcomingItemsSection
+            items={upcomingEvents}
+            category="events"
+            onNavigateToChat={(eventId) => onNavigate('events-chat', eventId)}
+            onNavigateToFind={() => {}}
+            onNavigateToCreate={() => onBookEvent({ title: 'New Event' })}
+          />
 
           {/* Upcoming Featured Events */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-lg p-6 mb-8">

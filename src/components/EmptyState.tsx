@@ -48,25 +48,42 @@ export function EmptyState({
         {description}
       </p>
 
-      {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Large Action Boxes - Like Image 2 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
         {actionLabel && onAction && (
-          <Button
+          <button
             onClick={onAction}
-            className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all"
+            className="group relative bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 text-left overflow-hidden"
           >
-            {actionLabel}
-          </Button>
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transform -translate-x-full group-hover:translate-x-full transition-all duration-700" />
+            
+            <div className="relative z-10">
+              <div className="text-4xl mb-4">🔍</div>
+              <h3 className="text-white mb-2 font-bold">{actionLabel}</h3>
+              <p className="text-white/80 text-sm">
+                Browse available matches and join the fun
+              </p>
+            </div>
+          </button>
         )}
         
         {secondaryActionLabel && onSecondaryAction && (
-          <Button
+          <button
             onClick={onSecondaryAction}
-            variant="outline"
-            className="border-slate-300 hover:bg-slate-50"
+            className="group relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 text-left overflow-hidden"
           >
-            {secondaryActionLabel}
-          </Button>
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transform -translate-x-full group-hover:translate-x-full transition-all duration-700" />
+            
+            <div className="relative z-10">
+              <div className="text-4xl mb-4">✨</div>
+              <h3 className="text-white mb-2 font-bold">{secondaryActionLabel}</h3>
+              <p className="text-white/90 text-sm">
+                Set your vibe and build your community
+              </p>
+            </div>
+          </button>
         )}
       </div>
 

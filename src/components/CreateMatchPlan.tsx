@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, MapPin, Users, Calendar, Clock, Search, ChevronRight, Send, Plus, X, Heart, CreditCard, DollarSign, Split } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Calendar, Clock, Search, ChevronRight, Send, Plus, X, Heart, CreditCard, DollarSign, Split, AlertCircle, TrendingDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
@@ -11,6 +11,8 @@ import { generateUpcomingDates, getMinBookingDate } from '../utils/dateUtils';
 import chatService from '../services/chatService';
 import { supabase } from '../lib/supabase';
 import { communityService } from '../services/communityService';
+import { pricingService } from '../services/pricingService';
+import { deadlineReminderService } from '../services/deadlineReminderService';
 
 interface CreateMatchPlanProps {
   onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'chat' | 'availability', turfId?: string, matchId?: string) => void;
@@ -114,6 +116,7 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
   const [created, setCreated] = useState(false);
   const [visibility, setVisibility] = useState<'community' | 'nearby' | 'private'>('community');
   const [minPlayers, setMinPlayers] = useState('6');
+  const [paymentMethod, setPaymentMethod] = useState<'5-step' | 'direct'>('5-step');
 
   const vibes = ['Friendly', 'Competitive', 'Beginner Friendly', 'High Energy', 'Chill', 'Social', 'Learning', 'Inclusive'];
 
@@ -149,8 +152,13 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
   const handleCreate = async () => {
     setCreated(true);
     
-    // Create match object with new payment flow data
+    // Create match object with payment method
     const matchId = 'match-' + Math.random().toString(36).substr(2, 9);
+    
+    // Calculate payment deadline based on match timing
+    const matchDateTime = new Date(`${selectedDate} ${selectedTime}`);
+    const deadlineInfo = pricingService.calculatePaymentDeadline(matchDateTime);
+    
     const match = {
       id: matchId,
       title: matchTitle,
@@ -160,12 +168,13 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
       sport: selectedTurf?.sport || '',
       status: 'upcoming' as 'upcoming' | 'completed',
       visibility: visibility,
-      paymentOption: 'split', // Always split equally
-      amount: getTurfCost(), // Total turf cost
+      paymentOption: paymentMethod === 'direct' ? 'Pay Directly' : 'split',
+      amount: getTurfCost(),
       location: selectedTurf?.location || '',
       minPlayers: parseInt(minPlayers),
       maxPlayers: parseInt(maxPlayers),
       turfCost: getTurfCost(),
+      paymentDeadline: deadlineInfo.deadline.toISOString(),
     };
 
     // Auto-create WhatsApp group chat for the match
@@ -173,6 +182,22 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        // Schedule deadline reminders for the organizer
+        deadlineReminderService.createReminder(
+          matchId,
+          user.id,
+          deadlineInfo.deadline
+        );
+
+        // Store reminder for other users when they join
+        localStorage.setItem(
+          `match_deadline_${matchId}`,
+          JSON.stringify({
+            deadline: deadlineInfo.deadline.toISOString(),
+            paymentWindowDuration: deadlineInfo.paymentWindowDuration,
+            createdAt: new Date().toISOString(),
+          })
+        );
         // Create group chat room for this match
         const chatRoom = await chatService.createRoom({
           name: `${matchTitle} 🏃‍♂️`,
@@ -187,9 +212,13 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
         });
 
         // Send welcome system message
+        const paymentInfo = paymentMethod === 'direct' 
+          ? `💰 Cost: ₹${getTurfCost()} total\n💳 Payment: Direct booking with payment required upfront`
+          : `💰 Cost: ₹${getTurfCost()} (₹${Math.round(getTurfCost() / parseInt(minPlayers))} per person)\n💳 Payment: 5-step process - Opens after ${minPlayers} players join`;
+        
         await chatService.sendMessage(
           chatRoom.id,
-          `🎉 Welcome to ${matchTitle}!\n\n📍 Venue: ${selectedTurf?.name || 'TBD'}\n📅 Date: ${selectedDate}\n⏰ Time: ${selectedTime}\n\n💰 Cost: ₹${getTurfCost()} (split between ${minPlayers}-${maxPlayers} players)\n\nPayment opens after ${minPlayers} players join. Let's make this match amazing! 🚀`,
+          `🎉 Welcome to ${matchTitle}!\n\n📍 Venue: ${selectedTurf?.name || 'TBD'}\n📅 Date: ${selectedDate}\n⏰ Time: ${selectedTime}\n\n${paymentInfo}\n\nLet's make this match amazing! 🚀`,
           'system'
         );
 
@@ -241,12 +270,11 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
       ? 'Visible to nearby players!'
       : 'Private match created!';
 
-    // Call onMatchCreate with the match object
-    onMatchCreate(match);
+    // Call onMatchCreate with the match object FIRST
+    await onMatchCreate(match);
     
-    // Navigate to chat after brief delay
+    // Short delay then navigate to chat
     setTimeout(() => {
-      const matchId = match.id;
       onNavigate('sports-chat', undefined, matchId);
     }, 1500);
   };
@@ -580,6 +608,57 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
                     </div>
                   </div>
 
+                  {/* TRANSPARENT PRICING SECTION */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-300 p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <DollarSign className="w-6 h-6 text-green-600" />
+                      <h3 className="text-lg font-semibold text-green-900">💰 Clear & Transparent Pricing</h3>
+                    </div>
+
+                    {/* Pricing Formula */}
+                    <div className="bg-white rounded-lg p-4 mb-4 border border-green-200">
+                      <p className="text-sm font-mono bg-green-50 p-3 rounded mb-3 text-green-900">
+                        <strong>Cost per person</strong> = Total Turf Cost ÷ Number of Players
+                      </p>
+                      <p className="text-sm font-mono bg-green-50 p-3 rounded text-green-900">
+                        <strong>Cost per person</strong> = ₹{getTurfCost()} ÷ [Players Joining]
+                      </p>
+                    </div>
+
+                    {/* Cost Examples */}
+                    <div className="space-y-2 mb-4">
+                      <p className="text-sm font-semibold text-green-900">📊 Cost Examples:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div className="bg-white rounded p-3 border border-green-200">
+                          <p className="text-xs text-green-600 font-semibold">With {minPlayers} players</p>
+                          <p className="text-lg font-bold text-green-700">₹{Math.round(getTurfCost() / parseInt(minPlayers))}</p>
+                          <p className="text-xs text-slate-500">per person</p>
+                        </div>
+                        <div className="bg-white rounded p-3 border border-green-200">
+                          <p className="text-xs text-green-600 font-semibold">With {Math.round((parseInt(minPlayers) + parseInt(maxPlayers)) / 2)} players</p>
+                          <p className="text-lg font-bold text-green-700">₹{Math.round(getTurfCost() / Math.round((parseInt(minPlayers) + parseInt(maxPlayers)) / 2))}</p>
+                          <p className="text-xs text-slate-500">per person</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded p-3 border border-green-300">
+                          <p className="text-xs text-green-700 font-semibold">With {maxPlayers} players 🎉</p>
+                          <p className="text-lg font-bold text-green-800">₹{Math.round(getTurfCost() / parseInt(maxPlayers))}</p>
+                          <p className="text-xs text-green-600">Best value!</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Important Note */}
+                    <div className="bg-white border-l-4 border-green-500 p-3 rounded flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-green-900 mb-1">How It Works:</p>
+                        <p className="text-xs text-green-700">
+                          The exact cost per person will be determined <strong>at the deadline</strong> based on the final number of players. More players = lower cost for everyone! ✨
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex gap-4">
                     <Button
                       variant="outline"
@@ -609,6 +688,110 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
                 </div>
 
                 <div className="space-y-6">
+                  {/* PAYMENT & DEADLINE TRANSPARENCY */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-300 p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Clock className="w-6 h-6 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-blue-900">⏰ Deadline & Reminders</h3>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="bg-white rounded-lg p-4 border border-blue-200">
+                        <p className="text-sm text-blue-900 mb-2">
+                          <strong>Payment Deadline:</strong> 5 minutes before match time
+                        </p>
+                        <p className="text-xs text-blue-700">
+                          You'll receive automatic reminders at:
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
+                            📅 7 days before
+                          </Badge>
+                          <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
+                            📅 3 days before
+                          </Badge>
+                          <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
+                            🔔 1 day before
+                          </Badge>
+                          <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
+                            ⏰ Hourly (last day)
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                        <p className="text-xs text-blue-800">
+                          💡 <strong>Pro Tip:</strong> Set notifications on your phone so you never miss a payment deadline!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Method Selection */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-6">
+                    <h3 className="mb-4">Payment Method</h3>
+                    <p className="text-slate-600 mb-4">Choose how players will handle payment</p>
+                    
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => setPaymentMethod('5-step')}
+                        className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                          paymentMethod === '5-step'
+                            ? 'border-cyan-500 bg-cyan-50'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Clock className="w-5 h-5 text-cyan-600" />
+                          </div>
+                          <div>
+                            <h4 className="mb-1 flex items-center gap-2">
+                              5-Step Payment Process
+                              <Badge className="bg-cyan-500">Recommended</Badge>
+                            </h4>
+                            <p className="text-sm text-slate-600 mb-2">
+                              Free to join → Soft lock at min players → Payment window → Hard lock
+                            </p>
+                            <ul className="text-xs text-slate-500 space-y-1">
+                              <li>✓ Players join for free initially</li>
+                              <li>✓ Payment only when minimum players reached</li>
+                              <li>✓ No-shows automatically removed</li>
+                              <li>✓ Split cost equally among confirmed players</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => setPaymentMethod('direct')}
+                        className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                          paymentMethod === 'direct'
+                            ? 'border-emerald-500 bg-emerald-50'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <CreditCard className="w-5 h-5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <h4 className="mb-1">Direct Payment Booking</h4>
+                            <p className="text-sm text-slate-600 mb-2">
+                              Pay full amount upfront to confirm booking immediately
+                            </p>
+                            <ul className="text-xs text-slate-500 space-y-1">
+                              <li>✓ Instant booking confirmation</li>
+                              <li>✓ Turf reserved immediately</li>
+                              <li>✓ Other players can join for free or share cost</li>
+                              <li>✓ Best for organizing with committed group</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Visibility Options */}
                   <div className="bg-white rounded-xl border border-slate-200 p-6">
                     <h3 className="mb-4">Match Visibility</h3>

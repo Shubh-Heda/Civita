@@ -353,7 +353,7 @@ export function CommunityFeed({ onNavigate, matches }: CommunityFeedProps) {
       )}
       
       {/* Dark Header */}
-      <header className="relative z-40 backdrop-blur-sm border-b border-slate-800/50 sticky top-0 bg-slate-950/80">
+      <header className="relative z-40 backdrop-blur-sm border-b border-slate-800/50 bg-slate-950/80">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

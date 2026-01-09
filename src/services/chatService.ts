@@ -42,11 +42,44 @@ export interface ChatMessage {
   };
 }
 
+export type ChatMemberRole = 'admin' | 'moderator' | 'member';
+
+export interface ChatModerationAction {
+  id: string;
+  room_id: string;
+  actor_id: string;
+  action_type: 'delete_message' | 'pin_message' | 'kick_user' | 'ban_user' | 'mute_user';
+  target_message_id?: string;
+  target_user_id?: string;
+  reason?: string;
+  created_at: string;
+}
+
+export interface ChatMessageReport {
+  id: string;
+  room_id: string;
+  message_id: string;
+  reporter_id: string;
+  reason: string;
+  details?: string;
+  status: 'pending' | 'actioned' | 'dismissed';
+  created_at: string;
+}
+
+export interface ChatPinnedMessage {
+  id: string;
+  room_id: string;
+  message_id: string;
+  pinned_by: string;
+  pinned_at: string;
+  message?: ChatMessage;
+}
+
 export interface ChatRoomMember {
   id: string;
   room_id: string;
   user_id: string;
-  role: 'admin' | 'moderator' | 'member';
+  role: ChatMemberRole;
   joined_at: string;
   last_read_at: string;
   is_muted: boolean;
@@ -165,6 +198,21 @@ class ChatService {
     if (error) throw error;
   }
 
+  async getMemberRole(roomId: string): Promise<ChatMemberRole | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('chat_room_members')
+      .select('role')
+      .eq('room_id', roomId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data?.role ?? null;
+  }
+
   async removeMember(roomId: string, userId: string): Promise<void> {
     const { error } = await supabase
       .from('chat_room_members')
@@ -183,6 +231,14 @@ class ChatService {
       .eq('user_id', userId);
 
     if (error) throw error;
+  }
+
+  async promoteToModerator(roomId: string, userId: string): Promise<void> {
+    await this.updateMemberRole(roomId, userId, 'moderator');
+  }
+
+  async promoteToAdmin(roomId: string, userId: string): Promise<void> {
+    await this.updateMemberRole(roomId, userId, 'admin');
   }
 
   async markAsRead(roomId: string): Promise<void> {
@@ -220,6 +276,199 @@ class ChatService {
 
     if (error) throw error;
     return (data || []).reverse(); // Return in chronological order
+  }
+
+  async deleteMessage(roomId: string, messageId: string, reason?: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('chat_messages')
+      .update({
+        is_deleted: true,
+        content: '[deleted by moderator]',
+        media_url: null,
+        media_thumbnail: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', messageId)
+      .eq('room_id', roomId);
+
+    if (error) throw error;
+
+    await supabase.from('chat_moderation_actions').insert({
+      room_id: roomId,
+      actor_id: user.id,
+      action_type: 'delete_message',
+      target_message_id: messageId,
+      reason
+    });
+  }
+
+  async reportMessage(roomId: string, messageId: string, reason: string, details?: string): Promise<ChatMessageReport> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('chat_message_reports')
+      .insert({
+        room_id: roomId,
+        message_id: messageId,
+        reporter_id: user.id,
+        reason,
+        details,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getModerationActions(roomId: string, limit = 20): Promise<ChatModerationAction[]> {
+    const { data, error } = await supabase
+      .from('chat_moderation_actions')
+      .select('*')
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ==================== PINNED MESSAGES ====================
+
+  async pinMessage(roomId: string, messageId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('chat_pinned_messages')
+      .insert({
+        room_id: roomId,
+        message_id: messageId,
+        pinned_by: user.id
+      });
+
+    if (error) throw error;
+
+    await supabase.from('chat_moderation_actions').insert({
+      room_id: roomId,
+      actor_id: user.id,
+      action_type: 'pin_message',
+      target_message_id: messageId
+    });
+  }
+
+  async unpinMessage(roomId: string, messageId: string): Promise<void> {
+    const { error } = await supabase
+      .from('chat_pinned_messages')
+      .delete()
+      .eq('room_id', roomId)
+      .eq('message_id', messageId);
+
+    if (error) throw error;
+  }
+
+  async getPinnedMessages(roomId: string): Promise<ChatPinnedMessage[]> {
+    const { data, error } = await supabase
+      .from('chat_pinned_messages')
+      .select(`
+        *,
+        message:chat_messages(
+          *,
+          sender:profiles(id, full_name, avatar_url)
+        )
+      `)
+      .eq('room_id', roomId)
+      .order('pinned_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ==================== USER MODERATION ====================
+
+  async kickUser(roomId: string, userId: string, reason?: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    await this.removeMember(roomId, userId);
+
+    await supabase.from('chat_moderation_actions').insert({
+      room_id: roomId,
+      actor_id: user.id,
+      action_type: 'kick_user',
+      target_user_id: userId,
+      reason
+    });
+  }
+
+  async banUser(roomId: string, userId: string, reason?: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    await this.removeMember(roomId, userId);
+
+    await supabase.from('chat_moderation_actions').insert({
+      room_id: roomId,
+      actor_id: user.id,
+      action_type: 'ban_user',
+      target_user_id: userId,
+      reason
+    });
+  }
+
+  async muteUser(roomId: string, userId: string, reason?: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('chat_room_members')
+      .update({ is_muted: true })
+      .eq('room_id', roomId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    await supabase.from('chat_moderation_actions').insert({
+      room_id: roomId,
+      actor_id: user.id,
+      action_type: 'mute_user',
+      target_user_id: userId,
+      reason
+    });
+  }
+
+  async unmuteUser(roomId: string, userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('chat_room_members')
+      .update({ is_muted: false })
+      .eq('room_id', roomId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+  }
+
+  // ==================== MESSAGE SEARCH ====================
+
+  async searchMessages(roomId: string, query: string, limit = 20): Promise<ChatMessage[]> {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select(`
+        *,
+        sender:profiles(id, full_name, avatar_url)
+      `)
+      .eq('room_id', roomId)
+      .eq('is_deleted', false)
+      .ilike('content', `%${query}%`)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
   }
 
   async sendMessage(roomId: string, content: string, messageType: ChatMessage['message_type'] = 'text', mediaUrl?: string): Promise<ChatMessage> {

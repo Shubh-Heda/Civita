@@ -98,27 +98,48 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Amount Summary */}
-          <div className="bg-gradient-to-br from-cyan-50 to-emerald-50 rounded-xl p-6 border border-cyan-200">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-700">Total Amount</span>
-                <span className="text-slate-900">₹{totalAmount}</span>
+          {/* Payment Progress Indicator */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-slate-600">Payment Progress</span>
+                <span className="text-slate-900 font-semibold">{Math.round((amountPaid / totalAmount) * 100)}%</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-700">Already Paid</span>
-                <span className="text-emerald-600">₹{amountPaid}</span>
-              </div>
-              <div className="border-t border-cyan-200 pt-3 flex items-center justify-between">
-                <span className="">Amount Due</span>
-                <span className="text-cyan-600">₹{remainingAmount}</span>
+              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full transition-all duration-300"
+                  style={{ width: `${(amountPaid / totalAmount) * 100}%` }}
+                />
               </div>
             </div>
           </div>
 
-          {/* Payment Method Selection */}
+          {/* Amount Summary - Enhanced */}
+          <div className="bg-gradient-to-br from-cyan-50 to-emerald-50 rounded-xl p-6 border border-cyan-200">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-700">Total Amount</span>
+                <span className="text-slate-900 font-semibold">₹{totalAmount}</span>
+              </div>
+              {amountPaid > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-700">Already Paid</span>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span className="text-emerald-600 font-semibold">₹{amountPaid}</span>
+                  </div>
+                </div>
+              )}
+              <div className="border-t border-cyan-200 pt-3 flex items-center justify-between">
+                <span className="text-slate-700 font-medium">Amount Due</span>
+                <span className="text-lg font-bold text-cyan-600">₹{remainingAmount}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Method Selection - Enhanced */}
           <div>
-            <label className="block text-sm mb-3">Select Payment Method</label>
+            <label className="block text-sm font-semibold mb-3 text-slate-900">Select Payment Method</label>
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => {
@@ -128,14 +149,15 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
                 }}
                 className={`p-4 rounded-xl border-2 transition-all text-center ${
                   selectedMethod === 'upi'
-                    ? 'border-cyan-500 bg-cyan-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-cyan-500 bg-cyan-50 shadow-lg'
+                    : 'border-slate-200 hover:border-cyan-300'
                 }`}
               >
                 <Smartphone className={`w-6 h-6 mx-auto mb-2 ${
                   selectedMethod === 'upi' ? 'text-cyan-600' : 'text-slate-400'
                 }`} />
-                <div className="text-sm">UPI</div>
+                <div className="text-sm font-medium">UPI</div>
+                <div className="text-xs text-slate-500 mt-1">Fast & Secure</div>
               </button>
 
               <button
@@ -145,14 +167,15 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
                 }}
                 className={`p-4 rounded-xl border-2 transition-all text-center ${
                   selectedMethod === 'card'
-                    ? 'border-cyan-500 bg-cyan-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-cyan-500 bg-cyan-50 shadow-lg'
+                    : 'border-slate-200 hover:border-cyan-300'
                 }`}
               >
                 <CreditCard className={`w-6 h-6 mx-auto mb-2 ${
                   selectedMethod === 'card' ? 'text-cyan-600' : 'text-slate-400'
                 }`} />
-                <div className="text-sm">Card</div>
+                <div className="text-sm font-medium">Card</div>
+                <div className="text-xs text-slate-500 mt-1">Debit/Credit</div>
               </button>
 
               <button
@@ -162,14 +185,15 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
                 }}
                 className={`p-4 rounded-xl border-2 transition-all text-center ${
                   selectedMethod === 'wallet'
-                    ? 'border-cyan-500 bg-cyan-50'
-                    : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-cyan-500 bg-cyan-50 shadow-lg'
+                    : 'border-slate-200 hover:border-cyan-300'
                 }`}
               >
                 <Wallet className={`w-6 h-6 mx-auto mb-2 ${
                   selectedMethod === 'wallet' ? 'text-cyan-600' : 'text-slate-400'
                 }`} />
-                <div className="text-sm">Wallet</div>
+                <div className="text-sm font-medium">Wallet</div>
+                <div className="text-xs text-slate-500 mt-1">Instant Pay</div>
               </button>
             </div>
           </div>
@@ -190,21 +214,26 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
             </div>
           )}
 
-          {/* UPI Payment Gateway */}
+          {/* UPI Payment Gateway - Enhanced */}
           {selectedMethod === 'upi' && showUpiGateway && (
-            <div className="space-y-5">
+            <div className="space-y-5 animate-in fade-in duration-300">
               {/* QR Code Section */}
-              <div className="bg-white rounded-xl border-2 border-purple-200 p-6 text-center">
-                <h3 className="font-semibold mb-4">Scan QR Code</h3>
-                <div className="w-48 h-48 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center mb-4 border-4 border-white shadow-lg">
+              <div className="bg-gradient-to-br from-white to-slate-50 rounded-xl border-2 border-purple-200 p-6 text-center shadow-lg">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <QrCode className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-semibold text-slate-900">Quick Payment</h3>
+                </div>
+                <div className="w-48 h-48 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center mb-4 border-4 border-white shadow-xl">
                   <QrCode className="w-32 h-32 text-purple-600" />
                 </div>
-                <p className="text-sm text-slate-600 mb-3">Scan with any UPI app to pay ₹{remainingAmount}</p>
-                <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between">
-                  <code className="text-sm text-slate-700">{merchantUPI}</code>
+                <p className="text-sm text-slate-600 mb-1">Scan with any UPI app to pay</p>
+                <p className="text-xl font-bold text-purple-600 mb-4">₹{remainingAmount}</p>
+                <div className="bg-slate-100 rounded-lg p-3 flex items-center justify-between border border-slate-200">
+                  <code className="text-sm text-slate-700 font-mono">{merchantUPI}</code>
                   <button
                     onClick={copyUpiId}
-                    className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+                    className="p-2 hover:bg-slate-200 rounded-lg transition-colors active:scale-95"
+                    title="Copy UPI ID"
                   >
                     <Copy className="w-4 h-4 text-slate-600" />
                   </button>
@@ -214,133 +243,159 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
               {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 border-t border-slate-200"></div>
-                <span className="text-sm text-slate-500">or pay with</span>
+                <span className="text-sm text-slate-500 font-medium">OR</span>
                 <div className="flex-1 border-t border-slate-200"></div>
               </div>
 
-              {/* UPI Apps */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleUpiAppClick('Google Pay')}
-                  disabled={processing}
-                  className="p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                    G
-                  </div>
-                  <span className="text-sm font-medium">Google Pay</span>
-                </button>
+              {/* UPI Apps - Enhanced */}
+              <div className="space-y-2">
+                <p className="text-xs text-slate-600 font-semibold uppercase tracking-wide">Choose Your UPI App</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleUpiAppClick('Google Pay')}
+                    disabled={processing}
+                    className="p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-lg font-bold group-hover:shadow-lg group-hover:scale-110 transition-transform">
+                      G
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">Google Pay</span>
+                  </button>
 
-                <button
-                  onClick={() => handleUpiAppClick('PhonePe')}
-                  disabled={processing}
-                  className="p-4 rounded-xl border-2 border-slate-200 hover:border-purple-500 hover:bg-purple-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                    Pe
-                  </div>
-                  <span className="text-sm font-medium">PhonePe</span>
-                </button>
+                  <button
+                    onClick={() => handleUpiAppClick('PhonePe')}
+                    disabled={processing}
+                    className="p-4 rounded-xl border-2 border-slate-200 hover:border-purple-500 hover:bg-purple-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white text-lg font-bold group-hover:shadow-lg group-hover:scale-110 transition-transform">
+                      Pe
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">PhonePe</span>
+                  </button>
 
-                <button
-                  onClick={() => handleUpiAppClick('Paytm')}
-                  disabled={processing}
-                  className="p-4 rounded-xl border-2 border-slate-200 hover:border-cyan-500 hover:bg-cyan-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                    P
-                  </div>
-                  <span className="text-sm font-medium">Paytm</span>
-                </button>
+                  <button
+                    onClick={() => handleUpiAppClick('Paytm')}
+                    disabled={processing}
+                    className="p-4 rounded-xl border-2 border-slate-200 hover:border-cyan-500 hover:bg-cyan-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-white text-lg font-bold group-hover:shadow-lg group-hover:scale-110 transition-transform">
+                      P
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">Paytm</span>
+                  </button>
 
-                <button
-                  onClick={() => handleUpiAppClick('Amazon Pay')}
-                  disabled={processing}
-                  className="p-4 rounded-xl border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                    A
-                  </div>
-                  <span className="text-sm font-medium">Amazon Pay</span>
-                </button>
+                  <button
+                    onClick={() => handleUpiAppClick('Amazon Pay')}
+                    disabled={processing}
+                    className="p-4 rounded-xl border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50 transition-all flex flex-col items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white text-lg font-bold group-hover:shadow-lg group-hover:scale-110 transition-transform">
+                      A
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">Amazon Pay</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <p className="text-sm text-amber-900">
-                  ⚡ <strong>Quick Tip:</strong> Click on your preferred UPI app to complete payment instantly
-                </p>
+              <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-lg p-4 flex gap-3">
+                <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-900 mb-1">Instant Payment</p>
+                  <p className="text-xs text-emerald-700">
+                    Your payment will be processed instantly. No additional charges!
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
           {paymentStarted && selectedMethod === 'card' && (
-            <div className="space-y-4">
-              {/* Amount to Pay - Show when entering card details */}
-              <div className="bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl p-6 text-white flex items-center justify-between">
+            <div className="space-y-4 animate-in fade-in duration-300">
+              {/* Amount to Pay - Enhanced */}
+              <div className="bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl p-6 text-white flex items-center justify-between shadow-lg">
                 <div>
-                  <div className="text-sm opacity-90">Amount to Pay</div>
-                  <div className="text-2xl font-bold">₹{remainingAmount}</div>
+                  <div className="text-sm opacity-90 font-medium">Amount to Pay</div>
+                  <div className="text-3xl font-bold mt-1">₹{remainingAmount}</div>
                 </div>
-                <Lock className="w-8 h-8 opacity-80" />
-              </div>
-              <p className="text-sm text-white/90 -mt-2">
-                Secure payment powered by GameSetGo. Your payment information is encrypted and safe.
-              </p>
-
-              <div>
-                <label className="block text-sm mb-2 text-slate-700">Card Number</label>
-                <Input
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={19}
-                  className="border-slate-300"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-2 text-slate-700">Expiry Date</label>
-                  <Input placeholder="MM/YY" maxLength={5} className="border-slate-300" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-slate-700">CVV</label>
-                  <Input placeholder="123" maxLength={3} type="password" className="border-slate-300" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm mb-2 text-slate-700">Cardholder Name</label>
-                <Input placeholder="Name on card" className="border-slate-300" />
+                <Lock className="w-10 h-10 opacity-80" />
               </div>
 
-              {/* Security Info */}
-              <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 flex gap-3">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-slate-900">Card Number *</label>
+                  <Input
+                    placeholder="1234 5678 9012 3456"
+                    maxLength={19}
+                    className="border-slate-300 text-base"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-slate-900">Expiry Date *</label>
+                    <Input 
+                      placeholder="MM/YY" 
+                      maxLength={5} 
+                      className="border-slate-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-slate-900">CVV *</label>
+                    <Input 
+                      placeholder="123" 
+                      maxLength={3} 
+                      type="password" 
+                      className="border-slate-300"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-slate-900">Cardholder Name *</label>
+                  <Input 
+                    placeholder="Name on card" 
+                    className="border-slate-300"
+                  />
+                </div>
+              </div>
+
+              {/* Security Info - Enhanced */}
+              <div className="bg-gradient-to-r from-pink-50 to-orange-50 border border-pink-200 rounded-xl p-4 flex gap-3">
                 <Lock className="w-5 h-5 text-pink-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-pink-900">Secure Payment</p>
-                  <p className="text-xs text-pink-700">Your payment information is encrypted and securely processed. We never store your card details.</p>
+                  <p className="text-sm font-semibold text-pink-900 mb-1">Bank-Grade Security</p>
+                  <p className="text-xs text-pink-700">Your payment is encrypted with 256-bit SSL. We never store your card details.</p>
                 </div>
               </div>
             </div>
           )}
 
           {paymentStarted && selectedMethod === 'wallet' && (
-            <div className="space-y-3">
-              <button className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white">
+            <div className="space-y-3 animate-in fade-in duration-300">
+              <p className="text-sm font-semibold text-slate-900 mb-3">Select Wallet</p>
+              <button className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-3 group">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white group-hover:shadow-lg group-hover:scale-105 transition-transform">
                   P
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="text-sm">Paytm Wallet</div>
-                  <div className="text-xs text-slate-500">Balance: ₹2,450</div>
+                  <div className="text-sm font-semibold text-slate-900">Paytm Wallet</div>
+                  <div className="text-xs text-slate-500">Available: ₹2,450</div>
                 </div>
+                {remainingAmount <= 2450 && (
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                )}
               </button>
-              <button className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
+              <button className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center gap-3 group">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white group-hover:shadow-lg group-hover:scale-105 transition-transform">
                   G
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="text-sm">Google Pay</div>
+                  <div className="text-sm font-semibold text-slate-900">Google Pay</div>
                   <div className="text-xs text-slate-500">Linked</div>
                 </div>
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
               </button>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-700">Wallets are secure and instant. Your funds are protected by encryption.</p>
+              </div>
             </div>
           )}
 
@@ -358,8 +413,8 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t p-6 rounded-b-2xl">
+        {/* Footer - Enhanced */}
+        <div className="sticky bottom-0 bg-gradient-to-r from-white via-slate-50 to-white border-t border-slate-200 p-6 rounded-b-2xl shadow-lg">
           <div className="flex gap-3">
             {paymentStarted && !showUpiGateway ? (
               <Button
@@ -371,7 +426,7 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
                 className="flex-1"
                 disabled={processing}
               >
-                Back to Methods
+                Back
               </Button>
             ) : showUpiGateway ? (
               <Button
@@ -395,7 +450,7 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
             <Button
               onClick={handlePayment}
               disabled={processing || !selectedMethod}
-              className="flex-1 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white gap-2"
+              className="flex-1 bg-gradient-to-r from-cyan-500 via-emerald-500 to-teal-500 hover:from-cyan-600 hover:via-emerald-600 hover:to-teal-600 text-white gap-2 font-semibold shadow-lg disabled:shadow-none disabled:opacity-60"
             >
               {processing ? (
                 <>
@@ -405,16 +460,21 @@ export function PaymentModal({ onClose, matchDate, matchTime, amountPaid, totalA
               ) : !paymentStarted ? (
                 <>
                   <CreditCard className="w-4 h-4" />
-                  Proceed to Pay
+                  Proceed to Pay ₹{remainingAmount}
                 </>
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  {selectedMethod === 'upi' && !showUpiGateway ? 'Show QR & Apps' : 'Complete Payment'}
+                  {selectedMethod === 'upi' && !showUpiGateway ? 'Continue' : 'Complete Payment'}
                 </>
               )}
             </Button>
           </div>
+          {!paymentStarted && !processing && (
+            <p className="text-xs text-slate-500 text-center mt-3">
+              💳 Secure payment. Your data is encrypted and protected.
+            </p>
+          )}
         </div>
       </div>
     </div>

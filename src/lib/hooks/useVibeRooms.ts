@@ -98,7 +98,14 @@ export function useVibeRooms(category?: CategoryFilter) {
         setSignals((prev) => [signal, ...prev].slice(0, 50));
         handleSignal(signal);
       },
-      (state) => setPresence(state),
+      (state) => {
+        console.log('👥 Presence updated:', Object.keys(state).length, 'users');
+        setPresence(state);
+        // Auto-offer to new peers when they join
+        if (localStream) {
+          setTimeout(() => offerToPeers(), 1000);
+        }
+      },
       (message) => {
         setChatMessages((prev) => [...prev, message].slice(-100));
       }
@@ -182,12 +189,18 @@ export function useVibeRooms(category?: CategoryFilter) {
     let pc = peerConnections.current.get(peerId);
     if (pc) return pc;
 
+    // Enhanced ICE servers with TURN support for better connectivity
     pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+      ],
     });
 
     pc.onicecandidate = (e) => {
       if (e.candidate && realtimeRef.current) {
+        console.log('🧊 Sending ICE candidate to', peerId);
         realtimeRef.current.sendSignal({
           kind: 'ice',
           roomId: realtimeRef.current.roomId,
@@ -199,13 +212,33 @@ export function useVibeRooms(category?: CategoryFilter) {
       }
     };
 
+    pc.onconnectionstatechange = () => {
+      console.log(`🔗 Connection state with ${peerId}:`, pc?.connectionState);
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(`❄️ ICE connection state with ${peerId}:`, pc?.iceConnectionState);
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(`❄️ ICE connection state with ${peerId}:`, pc?.iceConnectionState);
+    };
+
     pc.ontrack = (event) => {
+      console.log('📹 Received track from', peerId, event.track.kind);
       const [stream] = event.streams;
-      setRemoteStreams((prev) => {
-        const next = new Map(prev);
-        next.set(peerId, stream);
-        return next;
-      });
+      if (stream) {
+        console.log('✅ Setting remote stream for', peerId, 'with', stream.getTracks().length, 'tracks');
+        console.log('📊 Stream tracks:', stream.getVideoTracks().length, 'video,', stream.getAudioTracks().length, 'audio');
+        setRemoteStreams((prev) => {
+          const next = new Map(prev);
+          next.set(peerId, stream);
+          console.log('🗺️ Remote streams map now has', next.size, 'entries');
+          return next;
+        });
+      } else {
+        console.error('⚠️ No stream in event.streams!');
+      }
     };
 
     if (localStream) {
@@ -218,59 +251,103 @@ export function useVibeRooms(category?: CategoryFilter) {
 
   const handleSignal = async (signal: VibeSignal) => {
     if (!user || signal.from === user.id) return;
+    console.log(`📡 Received signal: ${signal.kind} from ${signal.from}`);
+    
     const pc = ensurePeer(signal.from);
     if (!pc) return;
 
-    if (signal.kind === 'offer') {
-      await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
-      if (localStream && pc.getSenders().length === 0) {
-        localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+    try {
+      if (signal.kind === 'offer') {
+        console.log('📥 Processing offer from', signal.from);
+        await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+        
+        // Ensure we add our tracks before answering
+        if (localStream) {
+          const senders = pc.getSenders();
+          localStream.getTracks().forEach((track) => {
+            const existingSender = senders.find(s => s.track?.kind === track.kind);
+            if (!existingSender) {
+              console.log('➕ Adding track to peer:', track.kind);
+              pc.addTrack(track, localStream);
+            }
+          });
+        }
+        
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        console.log('📤 Sending answer to', signal.from);
+        
+        if (realtimeRef.current) {
+          await realtimeRef.current.sendSignal({
+            kind: 'answer',
+            roomId: signal.roomId,
+            from: user.id,
+            to: signal.from,
+            payload: answer,
+            timestamp: Date.now(),
+          });
+        }
       }
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      if (realtimeRef.current) {
-        await realtimeRef.current.sendSignal({
-          kind: 'answer',
-          roomId: signal.roomId,
-          from: user.id,
-          to: signal.from,
-          payload: answer,
-          timestamp: Date.now(),
-        });
-      }
-    }
 
-    if (signal.kind === 'answer') {
-      await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
-    }
-
-    if (signal.kind === 'ice' && signal.payload) {
-      try {
-        await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
-      } catch (err) {
-        console.error('ICE add error', err);
+      if (signal.kind === 'answer') {
+        console.log('📥 Processing answer from', signal.from);
+        await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
       }
+
+      if (signal.kind === 'ice' && signal.payload) {
+        try {
+          console.log('❄️ Adding ICE candidate from', signal.from);
+          await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
+        } catch (err) {
+          console.error('❌ ICE add error', err);
+        }
+      }
+    } catch (err) {
+      console.error('❌ Signal handling error:', err);
     }
   };
 
   const offerToPeers = async () => {
-    if (!user || !localStream || !realtimeRef.current) return;
+    if (!user || !localStream || !realtimeRef.current) {
+      console.log('⚠️ Cannot offer: missing user, stream, or realtime session');
+      return;
+    }
+    
     const state = presence || {};
     const peers = Object.keys(state).filter((id) => id !== user.id);
+    console.log('📢 Offering to peers:', peers);
+    
     for (const peerId of peers) {
       const pc = ensurePeer(peerId);
       if (!pc) continue;
-      if (pc.signalingState === 'stable') {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await realtimeRef.current.sendSignal({
-          kind: 'offer',
-          roomId: realtimeRef.current.roomId,
-          from: user.id,
-          to: peerId,
-          payload: offer,
-          timestamp: Date.now(),
+      
+      try {
+        // Ensure all tracks are added before creating offer
+        const senders = pc.getSenders();
+        localStream.getTracks().forEach((track) => {
+          const existingSender = senders.find(s => s.track?.kind === track.kind);
+          if (!existingSender) {
+            console.log('➕ Adding track before offer:', track.kind);
+            pc.addTrack(track, localStream);
+          }
         });
+        
+        if (pc.signalingState === 'stable' || pc.signalingState === 'have-local-offer') {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          console.log('📤 Sending offer to', peerId);
+          
+          await realtimeRef.current.sendSignal({
+            kind: 'offer',
+            roomId: realtimeRef.current.roomId,
+            from: user.id,
+            to: peerId,
+            payload: offer,
+            timestamp: Date.now(),
+          });
+        }
+      } catch (err) {
+        console.error(`❌ Error offering to ${peerId}:`, err);
       }
     }
   };

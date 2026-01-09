@@ -199,3 +199,5 @@ SELECT
   'paid',
   1500
 WHERE EXISTS (SELECT 1 FROM auth.users LIMIT 1);
+
+

@@ -44,6 +44,7 @@ export function DiscordLikeRooms({ category = 'all', onClose }: DiscordRoomProps
   const [voiceVolume, setVoiceVolume] = useState(70);
   const videoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const remoteVideoRefs = useRef<Map<string, HTMLVideoElement | null>>(new Map());
 
   const {
     rooms,
@@ -75,12 +76,25 @@ export function DiscordLikeRooms({ category = 'all', onClose }: DiscordRoomProps
     }
   }, [isVideoOn, localStream]);
 
+  // Setup remote videos - Connect stream to each video element
+  useEffect(() => {
+    console.log('🎬 Setting up remote streams, count:', remoteStreams.size);
+    remoteStreams.forEach((stream, userId) => {
+      const videoElement = remoteVideoRefs.current.get(userId);
+      if (videoElement) {
+        console.log('📹 Connecting stream to video element for', userId);
+        videoElement.srcObject = stream;
+      }
+    });
+  }, [remoteStreams]);
+
   // Setup remote audio
   useEffect(() => {
-    if (remoteStreams.length > 0 && remoteAudioRef.current) {
-      const audioTracks = remoteStreams
+    if (remoteStreams.size > 0 && remoteAudioRef.current) {
+      const audioTracks = Array.from(remoteStreams.values())
         .flatMap((stream) => stream.getAudioTracks());
       if (audioTracks.length > 0) {
+        console.log('🔊 Setting up remote audio with', audioTracks.length, 'tracks');
         const combinedStream = new MediaStream(audioTracks);
         remoteAudioRef.current.srcObject = combinedStream;
       }
@@ -348,7 +362,9 @@ export function DiscordLikeRooms({ category = 'all', onClose }: DiscordRoomProps
                     playsInline
                     ref={(video) => {
                       if (video) {
-                        (video as any).srcObject = stream;
+                        remoteVideoRefs.current.set(userId, video);
+                        video.srcObject = stream;
+                        console.log('📺 Remote video element mounted for', userId);
                       }
                     }}
                     className="w-full h-full object-cover"

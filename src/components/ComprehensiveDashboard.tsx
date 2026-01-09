@@ -20,6 +20,9 @@ import { PreMatchIceBreakers } from './PreMatchIceBreakers';
 import { CelebrationAnimations, useCelebration } from './CelebrationAnimations';
 import { Confetti, HeartBurst, RippleEffect } from './Confetti';
 import { PageTransition, StaggeredList, StaggeredItem } from './PageTransition';
+import { LiveDiscoveryMap } from './LiveDiscoveryMap';
+import { OpsAnalyticsPanel } from './OpsAnalyticsPanel';
+import { PaymentsSafetyPanel } from './PaymentsSafetyPanel';
 import { activityService } from '../services/activityService';
 import { walletService } from '../services/walletService';
 import { achievementService } from '../services/achievementService';
@@ -319,7 +322,14 @@ export function ComprehensiveDashboard({ userId, userName, onClose }: Comprehens
                   {currentView === 'achievements' && <AchievementSystem userId={userId} />}
                   {currentView === 'wallet' && <WalletDashboard userId={userId} />}
                   {currentView === 'trust' && <TrustScoreBreakdown userId={userId} />}
-                  {currentView === 'activity' && <ActivityFeed userId={userId} limit={50} />}
+                  {currentView === 'activity' && (
+                    <div className="space-y-6">
+                      <LiveDiscoveryMap userId={userId} />
+                      <OpsAnalyticsPanel />
+                      <PaymentsSafetyPanel userId={userId} />
+                      <ActivityFeed userId={userId} limit={50} />
+                    </div>
+                  )}
                   {currentView === 'settings' && <NotificationSettings userId={userId} />}
                   {currentView === 'friendship' && <FriendshipMap userId={userId} />}
                   {currentView === 'compatibility' && <CompatibilityScores userId={userId} />}

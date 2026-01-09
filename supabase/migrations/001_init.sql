@@ -30,3 +30,5 @@ create table if not exists photos (
   uploaded_at timestamptz default now(),
   likes int default 0
 );
+
+

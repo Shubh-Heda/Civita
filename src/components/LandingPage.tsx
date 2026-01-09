@@ -1118,16 +1118,21 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
       </section>
 
       {/* Business Model & Refund Policy */}
-      <section className="relative py-24 bg-gradient-to-b from-[#0b1021]/85 via-[#12172d]/65 to-[#0b1021]/85">
+      <section className="relative py-24 bg-gradient-to-b from-[#f5e9dd] via-[#f2e4d4] to-[#f5e9dd]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
-            className="text-center mb-8 bg-gradient-to-r from-[#111827]/90 via-[#0f172a]/90 to-[#0b1021]/90 rounded-3xl p-8 mx-auto max-w-4xl border border-cyan-200/15 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="text-center mb-8 bg-white/85 rounded-3xl p-8 mx-auto max-w-4xl border border-slate-200 shadow-[0_18px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
-            <h2 className="mb-4 text-3xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-cyan-200 drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)]">Business Model & Refund Policy</h2>
-            <p className="text-black text-lg md:text-xl max-w-3xl mx-auto font-semibold">Flash cards instead of paragraphs: how we earn, what you unlock, and how refunds behave at each step.</p>
+            <h2
+              className="mb-4 text-3xl md:text-5xl font-black tracking-tight text-[#03161d] drop-shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+              style={{ color: '#03161d' }}
+            >
+              Business Model & Refund Policy
+            </h2>
+            <p className="text-slate-800 text-lg md:text-xl max-w-3xl mx-auto font-semibold">Flash cards instead of paragraphs: how we earn, what you unlock, and how refunds behave at each step.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-5">
@@ -1138,16 +1143,16 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05 }}
-                className="h-full rounded-2xl p-6 border-4 border-black bg-[#0f162e]/70 shadow-[0_18px_60px_rgba(0,0,0,0.35)]"
+                className="h-full rounded-2xl p-6 border border-slate-200 bg-white/95 shadow-[0_18px_50px_rgba(0,0,0,0.12)]"
               >
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.accent} flex items-center justify-center mb-4`}>
                   <item.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-black text-xl font-bold mb-3">{item.title}</h3>
-                <ul className="space-y-2 text-base text-black font-semibold">
+                <h3 className="text-slate-900 text-xl font-bold mb-3">{item.title}</h3>
+                <ul className="space-y-2 text-base text-slate-800 font-semibold">
                   {item.points.map((point, i) => (
                     <li key={i} className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-amber-300" />
+                      <div className="w-2 h-2 rounded-full bg-cyan-500" />
                       <span>{point}</span>
                     </li>
                   ))}
@@ -1158,11 +1163,11 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
 
           <div className="mt-6 grid md:grid-cols-3 gap-4">
             {[{ label: "Platform fee", value: "6-9%", note: "only on paid slots" }, { label: "Premium", value: "$6/mo", note: "cancel anytime" }, { label: "Partner take", value: "Instant", note: "auto-routed to venues" }].map((item, idx) => (
-              <div key={idx} className="rounded-xl border-4 border-black bg-black/60 px-5 py-4 flex items-center justify-between">
-                <div className="text-black text-base font-bold">{item.label}</div>
+              <div key={idx} className="rounded-xl border border-slate-200 bg-white/95 px-5 py-4 flex items-center justify-between shadow-md">
+                <div className="text-slate-900 text-base font-semibold">{item.label}</div>
                 <div className="text-right">
-                  <div className="text-black font-bold text-lg">{item.value}</div>
-                  <div className="text-black text-sm font-semibold">{item.note}</div>
+                  <div className="text-slate-900 font-bold text-lg">{item.value}</div>
+                  <div className="text-cyan-600 text-sm font-medium">{item.note}</div>
                 </div>
               </div>
             ))}
@@ -1176,16 +1181,16 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05 }}
-                className="h-full rounded-2xl p-6 border-4 border-black bg-[#0c1326]/80 shadow-[0_18px_60px_rgba(0,0,0,0.35)]"
+                className="h-full rounded-2xl p-6 border border-slate-200 bg-white/95 shadow-[0_18px_50px_rgba(0,0,0,0.12)]"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center`}>
                     <item.icon className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-sm font-bold px-3 py-1 rounded-full bg-white/20 border-2 border-black text-black">Refund moment</span>
+                  <span className="text-sm font-semibold px-3 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-700">Refund moment</span>
                 </div>
-                <h4 className="text-black text-xl font-bold mb-2">{item.title}</h4>
-                <p className="text-black text-base font-semibold leading-relaxed">{item.copy}</p>
+                <h4 className="text-slate-900 text-xl font-bold mb-2">{item.title}</h4>
+                <p className="text-slate-700 text-base font-semibold leading-relaxed">{item.copy}</p>
               </motion.div>
             ))}
           </div>

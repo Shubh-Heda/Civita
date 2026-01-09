@@ -44,6 +44,20 @@ export interface NotificationPreferences {
   matchDayOnly: boolean; // Only receive notifications on match days
 }
 
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'match_update' | 'payment_reminder' | 'achievement' | 'friend_activity' | 'community_update' | 'promotion';
+  title: string;
+  body: string;
+  matchId?: string;
+  actionUrl?: string;
+  timestamp: Date;
+  read: boolean;
+  reminderType?: string; // e.g., 'sevenDays', 'threeDays', 'oneDay', 'hourly'
+  data?: Record<string, any>;
+}
+
 const DEFAULT_PREFERENCES: NotificationPreferences = {
   userId: '',
   matchUpdates: {
@@ -92,6 +106,7 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
 
 class NotificationService {
   private preferences: Map<string, NotificationPreferences> = new Map();
+  private notifications: Map<string, Notification[]> = new Map(); // userId -> notifications
 
   constructor() {
     this.initializeDefaults();
@@ -202,6 +217,133 @@ class NotificationService {
     const defaults = { ...DEFAULT_PREFERENCES, userId };
     this.preferences.set(userId, defaults);
     return defaults;
+  }
+
+  /**
+   * Add a notification to a user's queue
+   */
+  addNotification(notification: Omit<Notification, 'id'>): Notification {
+    const id = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const fullNotification: Notification = {
+      ...notification,
+      id,
+    };
+
+    if (!this.notifications.has(notification.userId)) {
+      this.notifications.set(notification.userId, []);
+    }
+
+    this.notifications.get(notification.userId)!.push(fullNotification);
+
+    // Store in localStorage for persistence
+    this.persistNotifications(notification.userId);
+
+    return fullNotification;
+  }
+
+  /**
+   * Get all notifications for a user
+   */
+  getNotifications(userId: string, limit: number = 50): Notification[] {
+    const userNotifications = this.notifications.get(userId) || [];
+    return userNotifications.slice(-limit).reverse(); // Most recent first
+  }
+
+  /**
+   * Get unread notifications count
+   */
+  getUnreadCount(userId: string): number {
+    const userNotifications = this.notifications.get(userId) || [];
+    return userNotifications.filter(n => !n.read).length;
+  }
+
+  /**
+   * Mark notification as read
+   */
+  markAsRead(userId: string, notificationId: string): void {
+    const userNotifications = this.notifications.get(userId) || [];
+    const notification = userNotifications.find(n => n.id === notificationId);
+    if (notification) {
+      notification.read = true;
+      this.persistNotifications(userId);
+    }
+  }
+
+  /**
+   * Mark all notifications as read
+   */
+  markAllAsRead(userId: string): void {
+    const userNotifications = this.notifications.get(userId) || [];
+    userNotifications.forEach(n => {
+      n.read = true;
+    });
+    this.persistNotifications(userId);
+  }
+
+  /**
+   * Delete a notification
+   */
+  deleteNotification(userId: string, notificationId: string): void {
+    const userNotifications = this.notifications.get(userId) || [];
+    const index = userNotifications.findIndex(n => n.id === notificationId);
+    if (index !== -1) {
+      userNotifications.splice(index, 1);
+      this.persistNotifications(userId);
+    }
+  }
+
+  /**
+   * Clear all notifications for a user
+   */
+  clearNotifications(userId: string): void {
+    this.notifications.set(userId, []);
+    this.persistNotifications(userId);
+  }
+
+  /**
+   * Persist notifications to localStorage
+   */
+  private persistNotifications(userId: string): void {
+    const userNotifications = this.notifications.get(userId) || [];
+    try {
+      localStorage.setItem(
+        `notifications_${userId}`,
+        JSON.stringify(userNotifications.map(n => ({
+          ...n,
+          timestamp: n.timestamp.toISOString(),
+        })))
+      );
+    } catch (error) {
+      console.error('Failed to persist notifications:', error);
+    }
+  }
+
+  /**
+   * Load notifications from localStorage
+   */
+  loadNotifications(userId: string): void {
+    try {
+      const stored = localStorage.getItem(`notifications_${userId}`);
+      if (stored) {
+        const notifications = JSON.parse(stored).map((n: any) => ({
+          ...n,
+          timestamp: new Date(n.timestamp),
+        }));
+        this.notifications.set(userId, notifications);
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  }
+
+  /**
+   * Get payment reminders for a match
+   */
+  getPaymentReminders(userId: string, matchId: string): Notification[] {
+    const userNotifications = this.notifications.get(userId) || [];
+    return userNotifications.filter(
+      n => n.type === 'payment_reminder' && n.matchId === matchId
+    );
   }
 }
 

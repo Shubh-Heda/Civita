@@ -5,7 +5,7 @@ import { LiveActivityFeed } from './LiveActivityFeed';
 import { DiscordLikeRooms } from './DiscordLikeRooms';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface PartyCommunityFeedProps {
@@ -63,6 +63,11 @@ export function PartyCommunityFeed({ onNavigate, onGetTickets }: PartyCommunityF
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isPosting, setIsPosting] = useState(false);
+
+  // Reset scroll when category changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [selectedCategory]);
 
   const categories: Category[] = [
     {
@@ -137,7 +142,7 @@ export function PartyCommunityFeed({ onNavigate, onGetTickets }: PartyCommunityF
       </div>
 
       {/* Header */}
-      <header className="relative z-40 backdrop-blur-sm border-b border-slate-800/50 sticky top-0 bg-slate-950/80">
+      <header className="relative z-40 backdrop-blur-sm border-b border-slate-800/50 bg-slate-950/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <Button 
@@ -306,7 +311,7 @@ export function PartyCommunityFeed({ onNavigate, onGetTickets }: PartyCommunityF
               transition={{ duration: 0.3 }}
               className="-mx-6 -mb-6 -mt-2"
             >
-              <DiscordLikeRooms category="parties" onClose={() => setSelectedCategory('party-notifications')} />
+              <DiscordLikeRooms category="party" onClose={() => setSelectedCategory('party-notifications')} />
             </motion.div>
           )}
         </AnimatePresence>

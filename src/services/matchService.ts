@@ -44,8 +44,9 @@ export interface Match {
   rules?: string[];
   badges: MatchBadge[];
   paymentState?: MatchPaymentState;
+  paymentDeadline?: Date; // When payment must be completed
   chatId?: string;
-  createdAt: Date;
+  createdAt: Date; // When match was created (for deadline calculations)
   updatedAt: Date;
 }
 

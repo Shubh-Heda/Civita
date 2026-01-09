@@ -312,7 +312,7 @@ export function EnhancedCommunityFeed({ onNavigate, category }: EnhancedCommunit
       </div>
 
       {/* Header */}
-      <header className="relative z-40 backdrop-blur-sm border-b border-slate-800/50 sticky top-0 bg-slate-950/80">
+      <header className="relative z-40 backdrop-blur-sm border-b border-slate-800/50 bg-slate-950/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <Button 

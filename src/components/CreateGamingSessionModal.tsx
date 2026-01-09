@@ -9,6 +9,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { gamingService, GamingClub, GamingSession } from '../services/gamingService';
+import { matchService } from '../services/backendService';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 interface CreateGamingSessionModalProps {
   userId: string;
@@ -50,7 +53,7 @@ export function CreateGamingSessionModal({
     'Apex Legends', 'CS:GO', 'Dota 2', 'League of Legends', 'Tekken 8'
   ];
 
-  const handleCreateSession = () => {
+  const handleCreateSession = async () => {
     if (!selectedClub) return;
 
     const pricePerPerson = (selectedClub.hourlyRate * sessionData.duration) / sessionData.maxPlayers;
@@ -78,6 +81,35 @@ export function CreateGamingSessionModal({
       hasFood: sessionData.hasFood,
       players: []
     });
+
+    // Save to backend
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        await matchService.createMatch({
+          user_id: user.id,
+          title: `${sessionData.gameName || 'Gaming'} Session at ${selectedClub.name}`,
+          turf_name: selectedClub.name,
+          date: sessionData.date,
+          time: sessionData.time,
+          sport: sessionData.gameName || 'Gaming',
+          status: 'upcoming',
+          visibility: sessionData.visibility === 'public' ? 'community' : sessionData.visibility,
+          payment_option: sessionData.paymentMode === '5-stage' ? 'split' : 'Pay Directly',
+          amount: selectedClub.hourlyRate * sessionData.duration,
+          location: selectedClub.location,
+          min_players: sessionData.minPlayers,
+          max_players: sessionData.maxPlayers,
+          turf_cost: selectedClub.hourlyRate * sessionData.duration,
+          category: 'gaming'
+        });
+        console.log('✅ Gaming session saved to backend');
+      }
+    } catch (error) {
+      console.error('❌ Error saving gaming session:', error);
+      // Still create locally
+    }
 
     onSessionCreated(newSession);
   };

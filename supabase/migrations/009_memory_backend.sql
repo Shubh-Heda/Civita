@@ -1,56 +1,9 @@
--- ============================================
--- Memory Backend Migration
--- Tables for likes, comments, shares on memories
--- ============================================
-
--- Memory Likes Table
-CREATE TABLE IF NOT EXISTS memory_likes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  memory_id TEXT NOT NULL,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  UNIQUE(memory_id, user_id)
-);
-
-CREATE INDEX idx_memory_likes_memory_id ON memory_likes(memory_id);
-CREATE INDEX idx_memory_likes_user_id ON memory_likes(user_id);
-CREATE INDEX idx_memory_likes_created_at ON memory_likes(created_at DESC);
-
--- Memory Comments Table
-CREATE TABLE IF NOT EXISTS memory_comments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  memory_id TEXT NOT NULL,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_memory_comments_memory_id ON memory_comments(memory_id);
-CREATE INDEX idx_memory_comments_user_id ON memory_comments(user_id);
-CREATE INDEX idx_memory_comments_created_at ON memory_comments(created_at DESC);
-
--- Memory Shares Table
-CREATE TABLE IF NOT EXISTS memory_shares (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  memory_id TEXT NOT NULL,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  shared_to TEXT, -- platform or destination
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_memory_shares_memory_id ON memory_shares(memory_id);
-CREATE INDEX idx_memory_shares_user_id ON memory_shares(user_id);
-CREATE INDEX idx_memory_shares_created_at ON memory_shares(created_at DESC);
 
 -- ============================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- ============================================
 
-ALTER TABLE memory_likes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE memory_comments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE memory_shares ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memory_likes 
+ALTER TABLE memory_comments 
+ALTER TABLE memory_shares 
 
 -- Memory Likes Policies
 CREATE POLICY "Anyone can view memory likes"
@@ -142,3 +95,5 @@ COMMENT ON TABLE memory_likes IS 'Stores likes on memory entries';
 COMMENT ON TABLE memory_comments IS 'Stores comments on memory entries';
 COMMENT ON TABLE memory_shares IS 'Tracks when memories are shared';
 COMMENT ON FUNCTION get_memory_stats IS 'Returns aggregated stats for a memory (likes, comments, shares)';
+
+

@@ -235,3 +235,5 @@ GRANT EXECUTE ON FUNCTION get_user_activity_summary TO authenticated;
 -- SELECT can_user_post('user-uuid', 10);
 -- SELECT * FROM get_recommended_follows('user-uuid', 10);
 -- SELECT * FROM get_user_activity_summary('user-uuid');
+
+
