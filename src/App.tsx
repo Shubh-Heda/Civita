@@ -353,14 +353,17 @@ function AppContent() {
       
       if (locationPermissionGranted) {
         // Navigate directly to the appropriate dashboard
-        if (category === 'sports') {
-          setCurrentPage('dashboard');
-        } else if (category === 'events') {
-          setCurrentPage('events-dashboard');
-        } else if (category === 'parties') {
-          setCurrentPage('party-dashboard');
-        }
-        setPendingCategory(null);
+        // Use setTimeout to ensure state updates are properly batched and processed
+        setTimeout(() => {
+          if (category === 'sports') {
+            setCurrentPage('dashboard');
+          } else if (category === 'events') {
+            setCurrentPage('events-dashboard');
+          } else if (category === 'parties') {
+            setCurrentPage('party-dashboard');
+          }
+          setPendingCategory(null);
+        }, 0);
       } else {
         // Otherwise, request location
         setShowLocationRequest(true);
@@ -926,6 +929,14 @@ function AppContent() {
     }
     if (matchId) {
       setSelectedMatchId(matchId);
+    }
+    
+    // Reset category when navigating to landing
+    if (page === 'landing') {
+      // Clear any pending state when going back to landing
+      setPendingCategory(null);
+      setCurrentPage(page);
+      return;
     }
     
     // Track category based on where we're navigating from/to
