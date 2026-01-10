@@ -38,9 +38,10 @@ import { toast } from 'sonner';
 interface WhatsAppChatProps {
   onNavigate: (page: string) => void;
   matchId?: string | null;
+  category?: 'sports' | 'events' | 'party' | 'gaming' | 'coaching';
 }
 
-export function WhatsAppChat({ onNavigate, matchId }: WhatsAppChatProps) {
+export function WhatsAppChat({ onNavigate, matchId, category = 'sports' }: WhatsAppChatProps) {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -397,7 +398,16 @@ export function WhatsAppChat({ onNavigate, matchId }: WhatsAppChatProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onNavigate('dashboard')}
+            onClick={() => {
+              const categoryMap = {
+                'sports': 'dashboard',
+                'events': 'events-dashboard',
+                'party': 'party-dashboard',
+                'gaming': 'gaming-hub',
+                'coaching': 'coaching-dashboard'
+              };
+              onNavigate(categoryMap[category] || 'dashboard');
+            }}
             className="text-[#aebac1] hover:text-white hover:bg-[#374955] p-2 rounded-full h-10 w-10"
           >
             <ArrowLeft className="w-5 h-5" />

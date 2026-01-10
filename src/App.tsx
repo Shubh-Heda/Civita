@@ -1137,10 +1137,10 @@ function AppContent() {
         {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
         {currentPage === 'create-party-booking' && <CreatePartyBooking onNavigate={navigateTo} onPartyBook={handleEventBook} partyDetails={selectedEventDetails} />}
         {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} turfId={selectedTurfId} />}
-        {currentPage === 'chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} />}
-        {currentPage === 'sports-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} />}
-        {currentPage === 'events-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} />}
-        {currentPage === 'party-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} />}
+        {currentPage === 'chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="sports" />}
+        {currentPage === 'sports-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="sports" />}
+        {currentPage === 'events-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="events" />}
+        {currentPage === 'party-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="party" />}
         {currentPage === 'help' && <HelpSupport onNavigate={navigateTo} category={currentCategory} />}
         {currentPage === 'availability' && <RealTimeAvailability onNavigate={navigateTo} category={currentCategory} />}
         {currentPage === 'comprehensive-dashboard' && (

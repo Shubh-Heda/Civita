@@ -176,10 +176,10 @@ export function GroupChatGaming({ onNavigate, matchId }: GroupChatGamingProps) {
           {/* Chat Area */}
           <div className="col-span-8 bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
             {/* Chat Header */}
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-700 bg-black flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-slate-900">{currentRoom?.name}</h3>
-                <p className="text-sm text-slate-600 flex items-center gap-1">
+                <h3 className="font-semibold text-white">{currentRoom?.name}</h3>
+                <p className="text-sm text-slate-400 flex items-center gap-1">
                   <Users className="w-4 h-4" /> {currentRoom?.members} members
                 </p>
               </div>
@@ -198,18 +198,18 @@ export function GroupChatGaming({ onNavigate, matchId }: GroupChatGamingProps) {
                     )}
                     <div className={`flex flex-col ${msg.sender === 'You' ? 'items-end' : 'items-start'}`}>
                       {!msg.isSystem && (
-                        <p className="text-xs text-slate-600 mb-1">{msg.sender}</p>
+                        <p className="text-xs text-slate-400 mb-1">{msg.sender}</p>
                       )}
                       <div className={`px-4 py-2 rounded-2xl ${
                         msg.isSystem 
                           ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-900'
                           : msg.sender === 'You'
                           ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                          : 'bg-slate-100 text-slate-900'
+                          : 'bg-slate-700 text-white'
                       }`}>
                         <p className="text-sm">{msg.text}</p>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">{msg.time}</p>
+                      <p className="text-xs text-slate-400 mt-1">{msg.time}</p>
                     </div>
                   </div>
                 </div>

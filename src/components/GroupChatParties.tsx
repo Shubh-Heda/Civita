@@ -205,16 +205,16 @@ export function GroupChatParties({ onNavigate, matchId, parties }: GroupChatPart
           {/* Chat Area */}
           <div className="col-span-8 bg-white rounded-2xl border border-orange-200 overflow-hidden flex flex-col">
             {/* Chat Header */}
-            <div className="p-4 border-b border-orange-200 bg-gradient-to-r from-orange-50 to-pink-50">
+            <div className="p-4 border-b border-slate-700 bg-black">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white">
                     <PartyPopper className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-slate-900">{chatRooms.find(r => r.id === selectedRoom)?.name}</h2>
+                    <h2 className="text-white">{chatRooms.find(r => r.id === selectedRoom)?.name}</h2>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-slate-400">
                         {chatRooms.find(r => r.id === selectedRoom)?.members} members
                       </p>
                       <Badge className="bg-orange-100 text-orange-700 text-xs border border-orange-200">
@@ -265,10 +265,10 @@ export function GroupChatParties({ onNavigate, matchId, parties }: GroupChatPart
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm text-slate-900">{msg.sender}</span>
-                          <span className="text-xs text-slate-500">{msg.time}</span>
+                          <span className="text-sm text-white">{msg.sender}</span>
+                          <span className="text-xs text-slate-400">{msg.time}</span>
                         </div>
-                        <p className="text-sm text-slate-700">{msg.text}</p>
+                        <p className="text-sm text-white">{msg.text}</p>
                       </div>
                     </>
                   )}

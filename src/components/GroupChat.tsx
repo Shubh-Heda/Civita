@@ -526,7 +526,7 @@ export function GroupChat({ onNavigate, matchId, chatGroups, matches, events = [
           {/* Chat Area */}
           <div className="col-span-8 bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
             {/* Chat Header */}
-            <div className="p-4 border-b border-slate-200">
+            <div className="p-4 border-b border-slate-700 bg-black">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${
@@ -541,9 +541,9 @@ export function GroupChat({ onNavigate, matchId, chatGroups, matches, events = [
                      <MessageCircle className="w-6 h-6" />}
                   </div>
                   <div>
-                    <h2 className="text-slate-900">{chatRooms.find(r => r.id === selectedRoom)?.name}</h2>
+                    <h2 className="text-white">{chatRooms.find(r => r.id === selectedRoom)?.name}</h2>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-slate-400">
                         {chatRooms.find(r => r.id === selectedRoom)?.members} members
                       </p>
                       {isActivityChat && (
@@ -626,15 +626,15 @@ export function GroupChat({ onNavigate, matchId, chatGroups, matches, events = [
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm text-slate-900">{msg.sender}</span>
+                          <span className="text-sm text-white">{msg.sender}</span>
                           {msg.isFirstMatch && (
                             <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs px-2 py-0.5">
                               First Match 🌟
                             </Badge>
                           )}
-                          <span className="text-xs text-slate-500">{msg.time}</span>
+                          <span className="text-xs text-slate-400">{msg.time}</span>
                         </div>
-                        <p className="text-sm text-slate-700">{msg.text}</p>
+                        <p className="text-sm text-white">{msg.text}</p>
                       </div>
                     </>
                   )}
