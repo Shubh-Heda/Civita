@@ -146,10 +146,11 @@ class AdvancedTrustService {
 
     (data || []).forEach((event: any) => {
       const dim = event.score_type === 'overall' ? null : event.score_type;
-      if (dim && diffs[dim]) {
-        diffs[dim].total += event.change_amount || 0;
-        diffs[dim].count += 1;
-        diffs[dim].events.push({
+      if (dim && dim in diffs) {
+        const dimKey = dim as keyof typeof diffs;
+        diffs[dimKey].total += event.change_amount || 0;
+        diffs[dimKey].count += 1;
+        diffs[dimKey].events.push({
           date: event.created_at,
           change: event.change_amount,
           reason: event.reason
@@ -276,7 +277,7 @@ class AdvancedTrustService {
 
     const { data: score } = await supabase
       .from('user_trust_scores')
-      .select('last_activity_date')
+      .select('last_activity_date, overall_score')
       .eq('user_id', userId)
       .single();
 
@@ -288,14 +289,15 @@ class AdvancedTrustService {
 
     if (monthsInactive > 1) {
       const decayPercent = (decay?.decay_percentage || this.DECAY_PERCENTAGE) * monthsInactive;
-      const decayAmount = Math.floor((score.overall_score || 75) * (decayPercent / 100));
+      const currentScore = (score as any).overall_score || 75;
+      const decayAmount = Math.floor(currentScore * (decayPercent / 100));
 
       // Apply decay (log it as decay event)
       await supabase.from('trust_score_history').insert({
         user_id: userId,
         score_type: 'overall',
-        old_score: score.overall_score,
-        new_score: Math.max(50, (score.overall_score || 75) - decayAmount),
+        old_score: currentScore,
+        new_score: Math.max(50, currentScore - decayAmount),
         change_amount: -decayAmount,
         reason: `Inactivity decay (${monthsInactive.toFixed(1)} months)`,
         is_decay: true

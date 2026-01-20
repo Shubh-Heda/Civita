@@ -359,7 +359,7 @@ class EventFlowService {
 
     const allImprovements = new Set<string>();
     data.forEach(f => {
-      (f.improvement_areas || []).forEach(area => allImprovements.add(area));
+      (f.improvement_areas || []).forEach((area: string) => allImprovements.add(area));
     });
 
     const comments = data

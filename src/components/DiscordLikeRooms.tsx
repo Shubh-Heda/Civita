@@ -129,14 +129,14 @@ export function DiscordLikeRooms({ category = 'all', onClose }: DiscordRoomProps
   const toggleMic = async () => {
     setIsMicMuted(!isMicMuted);
     if (!isMicMuted) {
-      await startLocalMedia('audio');
+      await startLocalMedia();
     }
   };
 
   const toggleVideo = async () => {
     setIsVideoOn(!isVideoOn);
     if (!isVideoOn) {
-      await startLocalMedia('video');
+      await startLocalMedia({ video: true });
       await enableVideo();
     } else {
       await disableVideo();

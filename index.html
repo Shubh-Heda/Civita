@@ -6,12 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Avento - Connect with sports enthusiasts, join events, and build meaningful connections" />
     
-    <!-- Preconnect to external resources -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Enable HTTP/2 Server Push for critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://kouywbotopkrgxyjqylb.supabase.co" crossorigin />
+    
+    <!-- Preload critical scripts and styles -->
+    <link rel="preload" as="script" href="/src/main.tsx" />
     
     <!-- DNS prefetch for better performance -->
     <link rel="dns-prefetch" href="https://unpkg.com" />
+    
+    <!-- Resource hints for third-party resources -->
+    <link rel="prefetch" href="https://fonts.googleapis.com" />
     
     <title>Avento - Sports & Social Connection Platform</title>
     

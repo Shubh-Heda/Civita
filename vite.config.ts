@@ -1,10 +1,32 @@
 ﻿import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+import compression from 'vite-plugin-compression';
 
 export default defineConfig(({ command }) => ({
   base: process.env.GITHUB_PAGES === 'true' ? '/Avento/' : '/',
-  plugins: [react()],
+  
+  // Ensure environment variables are properly exposed
+  define: {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY),
+  },
+  
+  plugins: [
+    react(),
+    // Enable gzip compression for CDN delivery
+    compression({
+      algorithm: 'gzip',
+      ext: '.gz',
+      deleteOriginFile: false
+    }),
+    // Enable brotli compression for better performance on modern browsers
+    compression({
+      algorithm: 'brotli',
+      ext: '.br',
+      deleteOriginFile: false
+    })
+  ],
   
   // Build optimizations
   build: {
@@ -12,6 +34,7 @@ export default defineConfig(({ command }) => ({
     cssCodeSplit: true,
     sourcemap: false,
     minify: 'esbuild',
+    reportCompressedSize: true,
     rollupOptions: {
       output: {
         manualChunks: {

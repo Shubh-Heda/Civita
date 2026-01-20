@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { publicAnonKey } from '../utils/supabase/info';
 
-// Prefer environment vars (Vite-style) and fall back to the checked-in key for local demos.
+// For Vercel deployment: Use environment variables exclusively
+// VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in Vercel Environment Variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'https://kouywbotopkrgxyjqylb.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? publicAnonKey;
 
