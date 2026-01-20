@@ -147,7 +147,7 @@ export function PartyCommunityFeed({ onNavigate, onGetTickets }: PartyCommunityF
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
-              onClick={() => onNavigate('events-dashboard')}
+              onClick={() => onNavigate('party-dashboard')}
               className="gap-2 hover:bg-slate-800 text-slate-100"
             >
               <ArrowLeft className="w-5 h-5" />
