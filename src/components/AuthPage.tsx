@@ -1,23 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { AventoLogo } from './AventoLogo';
 import { toast } from 'sonner';
 import { useAuth } from '../lib/AuthProvider';
-import { Loader2, PartyPopper, Trophy, Music, AlertCircle, LogOut } from 'lucide-react';
+import { Loader2, Trophy, Music, AlertCircle, LogOut, Gamepad2, ArrowLeft } from 'lucide-react';
 
 interface AuthPageProps {
   onAuthSuccess: () => void;
+  onBack?: () => void;
 }
 
-export function AuthPage({ onAuthSuccess }: AuthPageProps) {
-  const { signIn, signUp, signInWithGoogle, user, signOut } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
+  const { signIn, signInWithGoogle, user, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [demoUserReady, setDemoUserReady] = useState(false);
   const [initializingDemo, setInitializingDemo] = useState(false);
 
@@ -28,67 +23,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     setInitializingDemo(false);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    if (!isLogin && !name) {
-      toast.error('Please enter your name');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        // Sign in
-        const { data, error } = await signIn(email, password);
-        
-        if (error) {
-          console.error('Sign in error:', error);
-          
-          // Provide more helpful error messages
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password. Please check your credentials or create a new account.');
-          } else if (error.message.includes('Email not confirmed')) {
-            toast.error('Please confirm your email address before signing in.');
-          } else {
-            toast.error(error.message || 'Failed to sign in');
-          }
-        } else if (data) {
-          toast.success('Welcome back! 🎉');
-          onAuthSuccess();
-        }
-      } else {
-        // Sign up
-        const { data, error } = await signUp(email, password, { name });
-        
-        if (error) {
-          console.error('Sign up error:', error);
-          toast.error(error.message || 'Failed to create account');
-        } else if (data) {
-          toast.success('Account created successfully! 🎉');
-          onAuthSuccess();
-        }
-      }
-    } catch (error: any) {
-      console.error('Auth error:', error);
-      toast.error('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDemoLogin = async () => {
-    setEmail('demo@gamesetgo.com');
-    setPassword('demo123');
-    setIsLogin(true);
-    
-    // Automatically submit after a short delay
     setTimeout(async () => {
       setLoading(true);
       try {
@@ -131,7 +66,17 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-purple-50 to-orange-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-purple-50 to-orange-50 flex items-center justify-center p-4 relative">
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 p-2 hover:bg-white rounded-lg transition-colors group"
+          title="Back to Landing Page"
+        >
+          <ArrowLeft className="w-5 h-5 text-slate-700 group-hover:text-cyan-600 transition-colors" />
+        </button>
+      )}
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
         {/* Left side - Branding */}
         <div className="hidden lg:block">
@@ -166,21 +111,21 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                     <Music className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-slate-900 mb-1">Cultural Events</h3>
+                    <h3 className="text-slate-900 mb-1">Events</h3>
                     <p className="text-sm text-slate-600">
-                      Discover concerts, festivals, and cultural experiences with your community
+                      Discover concerts, festivals, and standout experiences with your community
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <PartyPopper className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Gamepad2 className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-slate-900 mb-1">Parties & Celebrations</h3>
+                    <h3 className="text-slate-900 mb-1">Gaming</h3>
                     <p className="text-sm text-slate-600">
-                      Join amazing parties and create unforgettable memories together
+                      Join gaming sessions, tournaments, and find your squad
                     </p>
                   </div>
                 </div>
@@ -239,169 +184,78 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             ) : (
               <div>
                 <div className="text-center mb-8">
-                  <h2 className="mb-2">
-                    {isLogin ? 'Welcome Back!' : 'Create Account'}
-                  </h2>
-                  <p className="text-slate-600">
-                    {isLogin 
-                      ? 'Sign in to continue your journey' 
-                      : 'Join the Avento community today'
-                    }
-                  </p>
+                  <h2 className="mb-2">Welcome Back!</h2>
+                  <p className="text-slate-600">Sign in to continue your journey</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-              {!isLogin && (
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    className="mt-1"
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-slate-200"></div>
+                    <span className="text-xs text-slate-500">AUTH OPTIONS</span>
+                    <div className="flex-1 h-px bg-slate-200"></div>
+                  </div>
+
+                  {/* Google Sign In Button */}
+                  <Button
+                    type="button"
+                    onClick={handleGoogleSignIn}
                     disabled={loading}
-                  />
-                </div>
-              )}
+                    className="w-full bg-white border-2 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" viewBox="0 0 24 24">
+                          <image href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTIyLjU2IDEyLjI1YzAtLjYxLS4wNS0xLjIxLS4xNi0xLjc5SDEydjMuMzloNC44NGMtLjIgMS4wOC0uODIgMi4wMS0xLjc0IDIuNjF2Mi4xN2g0LjY5YzEuNjgtMS41NSAyLjY0LTMuODMgMi42NC02LjU5eiIgZmlsbD0iIzQyODVGNCIvPjxwYXRoIGQ9Ik0xMiAyMi41YzIuMjcgMCA0LjE3LS43NCA1LjU2LTIuMDNsLTQuNjktMy42MWMtLjc3LjUyLTEuNzcuODItMi44Ny44Mi0yLjIgMC00LjA2LTEuNDgtNC42OS0zLjQ3SDIuMTh2Mi4yM0MzLjU3IDIwLjc4IDcuNDMgMjIuNSAxMiAyMi41eiIgZmlsbD0iIzM0QTg1MyIvPjxwYXRoIGQ9Ik03LjMxIDE0LjdjLS40Ni0uMzItLjc2LS44Mi0uNzYtMS40M3MuMy0xLjExLjc2LTEuNDNWOS4wN0gyLjE4Yy0uNDQuODktLjcgMS45LS43IDIuOTdzLjI2IDIuMDguNyAyLjk3bDQuNDctMy4zN3oiIGZpbGw9IiNGQkJDMDQiLz48cGF0aCBkPSJNMTIgNS4zOGMxLjI0IDAgMi4zNS40MiAzLjIyIDEuMjRsNC4xOC00LjE4QzE2LjE2IDEuMDIgMTQuMTMgMCAxMiAwYy00LjU3IDAtOC40MyAxLjY5LTExLjM2IDQuNDdMNS4zIDcuMDdjLjYzLTEuOTkgMi40OS0zLjM2IDQuNy0zLjM2eiIgZmlsbD0iI0VBNDMzNSIvPjwvc3ZnPg==" width="24" height="24" />
+                        </svg>
+                        Sign in with Google
+                      </>
+                    )}
+                  </Button>
 
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="mt-1"
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="mt-1"
-                  disabled={loading}
-                />
-                {!isLogin && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Minimum 6 characters
-                  </p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 hover:from-cyan-600 hover:via-purple-600 hover:to-orange-600 text-white"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {isLogin ? 'Signing in...' : 'Creating account...'}
-                  </>
-                ) : (
-                  isLogin ? 'Sign In' : 'Create Account'
-                )}
-              </Button>
-            </form>
-
-            {/* Divider */}
-            {isLogin && (
-              <>
-                <div className="mt-6 flex items-center gap-3">
-                  <div className="flex-1 h-px bg-slate-200"></div>
-                  <span className="text-xs text-slate-500">OR</span>
-                  <div className="flex-1 h-px bg-slate-200"></div>
-                </div>
-
-                {/* Google Sign In Button */}
-                <Button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  className="w-full mt-4 bg-white border-2 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <image href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTIyLjU2IDEyLjI1YzAtLjYxLS4wNS0xLjIxLS4xNi0xLjc5SDEydjMuMzloNC44NGMtLjIgMS4wOC0uODIgMi4wMS0xLjc0IDIuNjF2Mi4xN2g0LjY5YzEuNjgtMS41NSAyLjY0LTMuODMgMi42NC02LjU5eiIgZmlsbD0iIzQyODVGNCIvPjxwYXRoIGQ9Ik0xMiAyMi41YzIuMjcgMCA0LjE3LS43NCA1LjU2LTIuMDNsLTQuNjktMy42MWMtLjc3LjUyLTEuNzcuODItMi44Ny44Mi0yLjIgMC00LjA2LTEuNDgtNC42OS0zLjQ3SDIuMTh2Mi4yM0MzLjU3IDIwLjc4IDcuNDMgMjIuNSAxMiAyMi41eiIgZmlsbD0iIzM0QTg1MyIvPjxwYXRoIGQ9Ik03LjMxIDE0LjdjLS40Ni0uMzItLjc2LS44Mi0uNzYtMS40M3MuMy0xLjExLjc2LTEuNDNWOS4wN0gyLjE4Yy0uNDQuODktLjcgMS45LS43IDIuOTdzLjI2IDIuMDguNyAyLjk3bDQuNDctMy4zN3oiIGZpbGw9IiNGQkJDMDQiLz48cGF0aCBkPSJNMTIgNS4zOGMxLjI0IDAgMi4zNS40MiAzLjIyIDEuMjRsNC4xOC00LjE4QzE2LjE2IDEuMDIgMTQuMTMgMCAxMiAwYy00LjU3IDAtOC40MyAxLjY5LTExLjM2IDQuNDdMNS4zIDcuMDdjLjYzLTEuOTkgMi40OS0zLjM2IDQuNy0zLjM2eiIgZmlsbD0iI0VBNDMzNSIvPjwvc3ZnPg==" width="24" height="24" />
-                      </svg>
-                      Sign in with Google
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setEmail('');
-                  setPassword('');
-                  setName('');
-                }}
-                className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                disabled={loading}
-              >
-                {isLogin 
-                  ? "Don't have an account? Sign up" 
-                  : 'Already have an account? Sign in'
-                }
-              </button>
-            </div>
-
-            {/* Demo credentials */}
-            <div className="mt-6 space-y-3">
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-start gap-2 mb-2">
-                  <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-blue-900 mb-1">
-                      <strong>First time here?</strong> Try the demo account or create your own!
-                    </p>
-                    <p className="text-xs text-blue-700">
-                      Demo: demo@gamesetgo.com • Password: demo123
-                    </p>
+                  {/* Demo credentials */}
+                  <div className="space-y-3">
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-start gap-2 mb-2">
+                        <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-blue-900 mb-1">
+                            <strong>First time here?</strong> Try the demo account.
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            Demo: demo@gamesetgo.com • Password: demo123
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      type="button"
+                      onClick={handleDemoLogin}
+                      disabled={loading || initializingDemo || !demoUserReady}
+                      variant="outline"
+                      className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      {initializingDemo ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Setting up demo...
+                        </>
+                      ) : !demoUserReady ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Preparing demo...
+                        </>
+                      ) : (
+                        '🎮 Try Demo Account'
+                      )}
+                    </Button>
                   </div>
                 </div>
-              </div>
-              
-              <Button
-                type="button"
-                onClick={handleDemoLogin}
-                disabled={loading || initializingDemo || !demoUserReady}
-                variant="outline"
-                className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
-              >
-                {initializingDemo ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Setting up demo...
-                  </>
-                ) : !demoUserReady ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Preparing demo...
-                  </>
-                ) : (
-                  '🎮 Try Demo Account'
-                )}
-              </Button>
-            </div>
               </div>
             )}
           </div>

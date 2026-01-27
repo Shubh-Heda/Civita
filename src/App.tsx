@@ -982,7 +982,7 @@ function AppContent() {
 
   // Show auth page if user clicked get started but not logged in
   if (!user && currentPage === 'auth') {
-    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+    return <AuthPage onAuthSuccess={handleAuthSuccess} onBack={() => setCurrentPage('landing')} />;
   }
 
   // Show onboarding form if user is logged in but hasn't completed onboarding
