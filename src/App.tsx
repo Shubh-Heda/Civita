@@ -41,12 +41,7 @@ const MemoryTimeline = lazy(() => import('./components/MemoryTimeline').then(m =
 const PhotoAlbum = lazy(() => import('./components/PhotoAlbum').then(m => ({ default: m.PhotoAlbum })));
 const HighlightReels = lazy(() => import('./components/HighlightReels').then(m => ({ default: m.HighlightReels })));
 const ModernChat = lazy(() => import('./components/ModernChat').then(m => ({ default: m.ModernChat })));
-const PartyDashboard = lazy(() => import('./components/PartyDashboard').then(m => ({ default: m.PartyDashboard })));
-const CreatePartyBooking = lazy(() => import('./components/CreatePartyBooking').then(m => ({ default: m.CreatePartyBooking })));
-const PartyCommunityFeed = lazy(() => import('./components/PartyCommunityFeed').then(m => ({ default: m.PartyCommunityFeed })));
-const GroupChatParties = lazy(() => import('./components/GroupChatParties').then(m => ({ default: m.GroupChatParties })));
-const PartiesProfilePage = lazy(() => import('./components/PartiesProfilePage').then(m => ({ default: m.PartiesProfilePage })));
-const VenuePartiesPage = lazy(() => import('./components/VenuePartiesPage').then(m => ({ default: m.VenuePartiesPage })));
+const MatchHistory = lazy(() => import('./components/MatchHistory').then(m => ({ default: m.MatchHistory })));
 import { apiService } from './services/apiService';
 import { friendshipService } from './services/friendshipService';
 import { gratitudeService } from './services/gratitudeService';
@@ -60,7 +55,7 @@ import { AuthProvider, useAuth } from './lib/AuthProvider';
 import { MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
 
-type Page = 'landing' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'help' | 'availability' | 'comprehensive-dashboard' | 'party-dashboard' | 'party-profile' | 'party-community' | 'party-chat' | 'party-events';
+type Page = 'landing' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'match-history' | 'help' | 'availability' | 'comprehensive-dashboard';
 
 interface UserProfile {
   name: string;
@@ -380,9 +375,6 @@ function AppContent() {
           } else if (pendingCategory === 'events') {
             setCurrentCategory('events');
             setCurrentPage('events-dashboard');
-          } else if (pendingCategory === 'parties') {
-            setCurrentCategory('parties');
-            setCurrentPage('party-dashboard');
           }
           
           // Clear pending category
@@ -432,9 +424,6 @@ function AppContent() {
           } else if (pendingCategory === 'events') {
             setCurrentCategory('events');
             setCurrentPage('events-dashboard');
-          } else if (pendingCategory === 'parties') {
-            setCurrentCategory('parties');
-            setCurrentPage('party-dashboard');
           }
           
           // Clear pending category
@@ -469,9 +458,6 @@ function AppContent() {
       } else if (pendingCategory === 'events') {
         setCurrentCategory('events');
         setCurrentPage('events-dashboard');
-      } else if (pendingCategory === 'parties') {
-        setCurrentCategory('parties');
-        setCurrentPage('party-dashboard');
       }
       
       // Clear pending category
@@ -617,11 +603,16 @@ function AppContent() {
     // Add to local state first
     setSportsMatches(prev => [...prev, match]);
     
-    // Create a chat group for this match
-    setChatGroups(prev => ({
-      ...prev,
-      [match.id]: match.title
-    }));
+    // Check if this is a direct payment match
+    const isDirectPayment = match.paymentOption === 'Pay Directly' || match.paymentOption === 'Direct Payment';
+    
+    // Only create chat group if NOT direct payment
+    if (!isDirectPayment) {
+      setChatGroups(prev => ({
+        ...prev,
+        [match.id]: match.title
+      }));
+    }
     
     // Save to backend if user is logged in
     if (user) {
@@ -651,54 +642,89 @@ function AppContent() {
         }
 
         const totalCost = match.amount ?? match.turfCost ?? 0;
-        // ALWAYS create modern chat conversation for match
-        try {
-          const matchId = createdMatch?.id || match.id;
-          const conversation = await modernChatService.createGroupConversation(
-            match.title,
-            `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
-            user.id,
-            user.name || user.email || 'Organizer',
-            [] // Members can join via match discovery
-          );
+        
+        // Only create group chat for split payment matches
+        if (!isDirectPayment) {
+          // Create modern chat conversation for match
+          try {
+            const matchId = createdMatch?.id || match.id;
+            const conversation = await modernChatService.createGroupConversation(
+              match.title,
+              `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
+              user.id,
+              user.name || user.email || 'Organizer',
+              [] // Members can join via match discovery
+            );
+            
+            // Update discovery hub with conversation ID
+            const matchWithChat = { ...match, groupChatId: conversation.id };
+            matchNotificationService.saveMatchToDiscoverable(matchWithChat);
+            
+            navigateTo('modern-chat');
+            console.log('✅ Modern chat conversation created for match:', conversation.id);
+            
+            // Send welcome message to conversation
+            await modernChatService.sendMessage(
+              conversation.id,
+              user.id,
+              user.name || user.email || 'Organizer',
+              `🎉 Match created! ${match.sport} at ${match.turfName} on ${match.date} at ${match.time}\n\nMinimum players: ${match.minPlayers}\nMaximum players: ${match.maxPlayers}\n\nJoin and let's play!`,
+              'text'
+            );
+          } catch (chatError) {
+            console.error('Note: Modern chat creation failed:', chatError);
+            // Still navigate to modern chat even if creation fails
+            navigateTo('modern-chat');
+          }
           
-          // Update discovery hub with conversation ID
-          const matchWithChat = { ...match, groupChatId: conversation.id };
-          matchNotificationService.saveMatchToDiscoverable(matchWithChat);
+          toast.success('Match Created Successfully! 🎉', {
+            description: 'Chat conversation created - opening now!',
+          });
+        } else {
+          // Direct payment - no group chat needed
+          // Show match booking confirmation with reminder
+          navigateTo('match-history');
+          toast.success('🎾 Match Booked Successfully!', {
+            description: `${match.sport} at ${match.turfName} on ${match.date} at ${match.time}. Payment confirmed - see you there!`,
+            duration: 6000,
+          });
           
-          navigateTo('modern-chat');
-          console.log('✅ Modern chat conversation created for match:', conversation.id);
-          
-          // Send welcome message to conversation
-          await modernChatService.sendMessage(
-            conversation.id,
-            user.id,
-            user.name || user.email || 'Organizer',
-            `🎉 Match created! ${match.sport} at ${match.turfName} on ${match.date} at ${match.time}\n\nMinimum players: ${match.minPlayers}\nMaximum players: ${match.maxPlayers}\n\nJoin and let's play!`,
-            'text'
-          );
-        } catch (chatError) {
-          console.error('Note: Modern chat creation failed:', chatError);
-          // Still navigate to modern chat even if creation fails
-          navigateTo('modern-chat');
+          // Show reminder notification
+          setTimeout(() => {
+            toast.info('📅 Match Reminder', {
+              description: `Don't forget: ${match.sport} match at ${match.turfName} - ${match.date} at ${match.time}`,
+              duration: 5000,
+            });
+          }, 2000);
         }
         
         console.log('✅ Match saved to backend:', match.title);
-        toast.success('Match Created Successfully! 🎉', {
-          description: 'Chat conversation created - opening now!',
-        });
       } catch (error) {
         console.error('❌ Error saving match to backend:', error);
-        // Still navigate to modern chat even if backend save fails
-        navigateTo('modern-chat');
-        toast.info('Match Created! 🎉', {
-          description: 'Chat ready - opening now!',
-        });
+        // Navigate appropriately based on payment type
+        if (isDirectPayment) {
+          navigateTo('match-history');
+          toast.success('Match Booked! 🎉', {
+            description: `${match.sport} at ${match.turfName} on ${match.date}. See you there!`,
+          });
+        } else {
+          navigateTo('modern-chat');
+          toast.info('Match Created! 🎉', {
+            description: 'Chat ready - opening now!',
+          });
+        }
       }
     } else {
-      toast.info('Match Created! 🎉', {
-        description: 'Sign in to create group chat!',
-      });
+      // User not logged in
+      if (isDirectPayment) {
+        toast.info('Match Booked! 🎉', {
+          description: 'Sign in to save your booking to history!',
+        });
+      } else {
+        toast.info('Match Created! 🎉', {
+          description: 'Sign in to create group chat!',
+        });
+      }
     }
   };
 
@@ -891,9 +917,6 @@ function AppContent() {
       setCurrentCategory('events');
     } else if (page === 'gaming-hub' || page === 'gaming-profile' || page === 'gaming-community' || page === 'gaming-chat' || page === 'gaming-map' || page === 'gaming-events' || page === 'gaming-photos' || page === 'gaming-highlights' || page === 'gaming-memories') {
       setCurrentCategory('gaming');
-    } else if (page === 'party-dashboard' || page === 'party-profile' || page === 'party-community' || page === 'party-chat' || page === 'party-events') {
-      // Set parties category for party-related pages (if you want to track this separately)
-      // For now, keep current category as parties is a cross-cutting feature
     }
     
     // Show notification when navigating to community if there are upcoming matches
@@ -1015,8 +1038,6 @@ function AppContent() {
             navigateTo('gaming-hub');
           } else if (pendingCategory === 'events') {
             navigateTo('events-dashboard');
-          } else if (pendingCategory === 'parties') {
-            navigateTo('party-dashboard');
           } else {
             navigateTo('dashboard');
           }
@@ -1157,11 +1178,7 @@ function AppContent() {
         {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onBack={goBack} onMatchCreate={handleMatchCreate} />}
         {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onBack={goBack} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
         {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} onBack={goBack} turfId={selectedTurfId} />}
-        {currentPage === 'party-dashboard' && <PartyDashboard onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'party-profile' && <PartiesProfilePage onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'party-community' && <PartyCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'party-chat' && <GroupChatParties onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'party-events' && <VenuePartiesPage onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'match-history' && <MatchHistory onNavigate={navigateTo} onBack={goBack} />}
         {(currentPage === 'chat' || currentPage === 'sports-chat' || currentPage === 'events-chat' || currentPage === 'group-chat' || currentPage === 'dm-chat' || currentPage === 'modern-chat') && (
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading chat...</div>}>
             <ModernChat 
