@@ -28,7 +28,7 @@ interface Match {
 }
 
 interface PartiesProfilePageProps {
-  onNavigate: (page: 'party-dashboard' | 'parties-profile' | 'party-community', param?: string) => void;
+  onNavigate: (page: 'party-dashboard' | 'party-profile' | 'party-community', param?: string) => void;
   onProfileUpdate: (profile: UserProfile) => void;
   userProfile: UserProfile;
   matches: Match[];

@@ -29,7 +29,7 @@ const CreateEventBooking = lazy(() => import('./components/CreateEventBooking').
 const TurfDetail = lazy(() => import('./components/TurfDetail').then(m => ({ default: m.TurfDetail })));
 const WhatsAppChat = lazy(() => import('./components/WhatsAppChat').then(m => ({ default: m.WhatsAppChat })));
 const GroupChatRoom = lazy(() => import('./components/chat/GroupChatRoom').then(m => ({ default: m.GroupChatRoom })));
-const GroupChatComponent = lazy(() => import('./components/GroupChatComponent'));
+const GroupChatComponent = lazy(() => import('./components/GroupChatComponent').then(m => ({ default: m.GroupChatComponent })));
 const DirectMessageThread = lazy(() => import('./components/chat/DirectMessageThread').then(m => ({ default: m.DirectMessageThread })));
 const HelpSupport = lazy(() => import('./components/HelpSupport').then(m => ({ default: m.HelpSupport })));
 const RealTimeAvailability = lazy(() => import('./components/RealTimeAvailability').then(m => ({ default: m.RealTimeAvailability })));
@@ -41,6 +41,12 @@ const MemoryTimeline = lazy(() => import('./components/MemoryTimeline').then(m =
 const PhotoAlbum = lazy(() => import('./components/PhotoAlbum').then(m => ({ default: m.PhotoAlbum })));
 const HighlightReels = lazy(() => import('./components/HighlightReels').then(m => ({ default: m.HighlightReels })));
 const ModernChat = lazy(() => import('./components/ModernChat').then(m => ({ default: m.ModernChat })));
+const PartyDashboard = lazy(() => import('./components/PartyDashboard').then(m => ({ default: m.PartyDashboard })));
+const CreatePartyBooking = lazy(() => import('./components/CreatePartyBooking').then(m => ({ default: m.CreatePartyBooking })));
+const PartyCommunityFeed = lazy(() => import('./components/PartyCommunityFeed').then(m => ({ default: m.PartyCommunityFeed })));
+const GroupChatParties = lazy(() => import('./components/GroupChatParties').then(m => ({ default: m.GroupChatParties })));
+const PartiesProfilePage = lazy(() => import('./components/PartiesProfilePage').then(m => ({ default: m.PartiesProfilePage })));
+const VenuePartiesPage = lazy(() => import('./components/VenuePartiesPage').then(m => ({ default: m.VenuePartiesPage })));
 import { apiService } from './services/apiService';
 import { friendshipService } from './services/friendshipService';
 import { gratitudeService } from './services/gratitudeService';
@@ -54,7 +60,7 @@ import { AuthProvider, useAuth } from './lib/AuthProvider';
 import { MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
 
-type Page = 'landing' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'help' | 'availability' | 'comprehensive-dashboard';
+type Page = 'landing' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'help' | 'availability' | 'comprehensive-dashboard' | 'party-dashboard' | 'party-profile' | 'party-community' | 'party-chat' | 'party-events';
 
 interface UserProfile {
   name: string;
@@ -94,10 +100,10 @@ function AppContent() {
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [showLocationRequest, setShowLocationRequest] = useState(false);
   const [chatGroups, setChatGroups] = useState<{[key: string]: string}>({});
-  const [currentCategory, setCurrentCategory] = useState<'sports' | 'events'>('sports');
+  const [currentCategory, setCurrentCategory] = useState<'sports' | 'events' | 'gaming' | 'parties'>('sports');
   const [selectedEventDetails, setSelectedEventDetails] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [pendingCategory, setPendingCategory] = useState<'sports' | 'events' | 'gaming' | null>(null);
+  const [pendingCategory, setPendingCategory] = useState<'sports' | 'events' | 'gaming' | 'parties' | null>(null);
   const inviteHandledRef = useRef(false);
   
   // Separate user profiles for each category
@@ -885,8 +891,10 @@ function AppContent() {
       setCurrentCategory('events');
     } else if (page === 'gaming-hub' || page === 'gaming-profile' || page === 'gaming-community' || page === 'gaming-chat' || page === 'gaming-map' || page === 'gaming-events' || page === 'gaming-photos' || page === 'gaming-highlights' || page === 'gaming-memories') {
       setCurrentCategory('gaming');
+    } else if (page === 'party-dashboard' || page === 'party-profile' || page === 'party-community' || page === 'party-chat' || page === 'party-events') {
+      // Set parties category for party-related pages (if you want to track this separately)
+      // For now, keep current category as parties is a cross-cutting feature
     }
-    // For 'comprehensive-dashboard', 'availability', 'help', 'chat', 'group-chat', 'dm-chat', etc., keep the current category
     
     // Show notification when navigating to community if there are upcoming matches
     if (page === 'community' && sportsMatches.filter(m => m.status === 'upcoming').length > 0) {
@@ -1127,7 +1135,6 @@ function AppContent() {
         {currentPage === 'gaming-community' && <GamingCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
         {currentPage === 'gaming-chat' && <GroupChatGaming onNavigate={navigateTo} onBack={goBack} matchId={selectedMatchId} />}
         {currentPage === 'gaming-map' && <GamingMapView onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'map-view' && <MapView onNavigate={navigateTo} onBack={goBack} />}
         {currentPage === 'sports-events' && <CommunityEvents category="sports" onNavigate={navigateTo} onBack={goBack} />}
         {currentPage === 'events-events' && <CommunityEvents category="events" onNavigate={navigateTo} onBack={goBack} />}
         {currentPage === 'sports-photos' && <PhotoAlbum category="sports" onNavigate={navigateTo} onBack={goBack} />}
@@ -1150,6 +1157,11 @@ function AppContent() {
         {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onBack={goBack} onMatchCreate={handleMatchCreate} />}
         {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onBack={goBack} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
         {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} onBack={goBack} turfId={selectedTurfId} />}
+        {currentPage === 'party-dashboard' && <PartyDashboard onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'party-profile' && <PartiesProfilePage onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'party-community' && <PartyCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'party-chat' && <GroupChatParties onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'party-events' && <VenuePartiesPage onNavigate={navigateTo} onBack={goBack} />}
         {(currentPage === 'chat' || currentPage === 'sports-chat' || currentPage === 'events-chat' || currentPage === 'group-chat' || currentPage === 'dm-chat' || currentPage === 'modern-chat') && (
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading chat...</div>}>
             <ModernChat 
