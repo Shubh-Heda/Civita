@@ -4,16 +4,16 @@
  */
 
 const STORAGE_KEYS = {
-  USER_PROFILE: 'avento_user_profile',
-  SPORTS_MATCHES: 'avento_sports_matches',
-  EVENTS: 'avento_events',
-  PARTIES: 'avento_parties',
-  TRUST_SCORES: 'avento_trust_scores',
-  FRIENDSHIP_STREAKS: 'avento_friendship_streaks',
-  PAYMENTS: 'avento_payments',
-  CHAT_MESSAGES: 'avento_chat_messages',
-  NOTIFICATIONS: 'avento_notifications',
-  USER_PREFERENCES: 'avento_user_preferences',
+  USER_PROFILE: 'civta_user_profile',
+  SPORTS_MATCHES: 'civta_sports_matches',
+  EVENTS: 'civta_events',
+  PARTIES: 'civta_parties',
+  TRUST_SCORES: 'civta_trust_scores',
+  FRIENDSHIP_STREAKS: 'civta_friendship_streaks',
+  PAYMENTS: 'civta_payments',
+  CHAT_MESSAGES: 'civta_chat_messages',
+  NOTIFICATIONS: 'civta_notifications',
+  USER_PREFERENCES: 'civta_user_preferences',
 } as const;
 
 class LocalStorageService {
@@ -46,7 +46,7 @@ class LocalStorageService {
     }
   }
 
-  // Clear all Avento data
+  // Clear all Civta data
   clearAll(): void {
     Object.values(STORAGE_KEYS).forEach(key => {
       this.remove(key);

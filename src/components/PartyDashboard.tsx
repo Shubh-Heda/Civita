@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { Search, Filter, Users, Heart, Sparkles, User, MessageCircle, Calendar, TrendingUp, Star, MapPin, PartyPopper, HelpCircle, Ticket, Clock, Zap, Map, Trophy, Camera, Video, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { UpcomingItemsSection } from './UpcomingItemsSection';
@@ -36,7 +37,7 @@ export function PartyDashboard({ onNavigate, userProfile: userProfileProp, onBoo
 
   // Check if user is new (first time visiting parties)
   useEffect(() => {
-    const hasSeenGuide = localStorage.getItem('avento_parties_guide_completed');
+    const hasSeenGuide = localStorage.getItem('civta_parties_guide_completed');
     if (!hasSeenGuide) {
       setShowFirstTimeGuide(true);
     }
@@ -199,6 +200,26 @@ export function PartyDashboard({ onNavigate, userProfile: userProfileProp, onBoo
               </div>
             </div>
           </div>
+
+          {/* Discovery Hub Button */}
+          <motion.button
+            onClick={() => onNavigate('discovery')}
+            className="w-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-500/60 rounded-xl p-4 mb-8 transition-all duration-300 group backdrop-blur-sm"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
+                  <Sparkles size={20} />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-slate-800 group-hover:text-purple-600 transition-colors">Discover Parties</h3>
+                  <p className="text-sm text-slate-600">Browse all party events near you</p>
+                </div>
+              </div>
+            </div>
+          </motion.button>
 
           {/* Emotional Dashboard Highlights */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">

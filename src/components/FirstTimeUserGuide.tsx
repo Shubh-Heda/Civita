@@ -15,7 +15,7 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
     const baseSteps = {
       sports: [
         {
-          title: 'Welcome to Avento Sports! ⚽',
+          title: 'Welcome to Civita Sports! ⚽',
           description: 'Connect with passionate players, join matches, and build lasting friendships through sports.',
           icon: Heart,
           color: 'from-cyan-500 to-emerald-500',
@@ -52,7 +52,7 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
       ],
       gaming: [
         {
-          title: 'Welcome to Avento Gaming! 🎮',
+          title: 'Welcome to Civita Gaming! 🎮',
           description: 'Find gaming buddies, join sessions at cafes, and level up your social gaming experience.',
           icon: Heart,
           color: 'from-purple-500 to-pink-500',
@@ -89,7 +89,7 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
       ],
       events: [
         {
-          title: 'Welcome to Avento Events! 🎉',
+          title: 'Welcome to Civita Events! 🎉',
           description: 'Discover amazing events, book tickets, and experience unforgettable moments with friends.',
           icon: Heart,
           color: 'from-yellow-500 to-orange-500',
@@ -126,7 +126,7 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
       ],
       party: [
         {
-          title: 'Welcome to Avento Party! 🎊',
+          title: 'Welcome to Civita Party! 🎊',
           description: 'Plan amazing parties, find venues, and make every celebration unforgettable!',
           icon: Heart,
           color: 'from-pink-500 to-purple-500',
@@ -163,7 +163,7 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
       ],
       coaching: [
         {
-          title: 'Welcome to Avento Coaching! 🎓',
+          title: 'Welcome to Civita Coaching! 🎓',
           description: 'Find expert coaches, book sessions, and master your skills with personalized guidance.',
           icon: Heart,
           color: 'from-blue-500 to-indigo-500',
@@ -221,7 +221,7 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
   };
 
   const handleSkip = () => {
-    localStorage.setItem(`avento_${category}_guide_completed`, 'true');
+    localStorage.setItem(`civita_${category}_guide_completed`, 'true');
     onClose();
   };
 

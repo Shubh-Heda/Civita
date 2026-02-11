@@ -47,7 +47,7 @@ class PhotoService {
       'Best team ever! ⚽',
       'Victory feels sweet! 🏆',
       'Another amazing match with amazing people ❤️',
-      'This is what Avento is all about! 🎉',
+      'This is what Civta is all about! 🎉',
       'Great vibes, great game!',
       'Couldn\'t ask for better teammates!'
     ];

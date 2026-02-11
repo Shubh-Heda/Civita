@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { enhancedGroupChatService } from '../../services/enhancedGroupChatService';
 import { directMessageBackend } from '../../services/directMessageBackend';
 import { firebaseAuth, usersService } from '../../services/firebaseService';
-import { Send, Phone, Video, Search, MoreVertical, Paperclip, Plus, X } from 'lucide-react';
+import { realGroupChatService } from '../../services/groupChatServiceReal';
+import { Send, Phone, Video, Search, MoreVertical, Paperclip, Plus, X, MessageSquarePlus, Users } from 'lucide-react';
+import { toast } from 'sonner';
 import './WhatsAppChat.css';
 
 interface ChatMessage {
@@ -35,6 +37,7 @@ interface Conversation {
   unread_count: number;
   members?: ChatUser[];
   created_at: string;
+  member_count?: number;
 }
 
 interface WhatsAppChatProps {
@@ -51,6 +54,9 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [currentUser, setCurrentUser] = useState<ChatUser | null>(null);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [newChatEmail, setNewChatEmail] = useState('');
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageUnsubscribeRef = useRef<(() => void) | null>(null);
 
@@ -60,7 +66,6 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
       try {
         const user = firebaseAuth.getCurrentUser();
         if (user) {
-          // Get user profile from Firestore
           const userProfile = await usersService.getUserProfile(user.id);
           setCurrentUser({
             id: user.id,
@@ -77,7 +82,8 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
 
     loadUser();
   }, []);
-  // Load conversations
+
+  // Load conversations (both DMs and group chats)
   useEffect(() => {
     const loadConversations = async () => {
       try {
@@ -119,44 +125,42 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
           })
         );
 
-        // Load group chats with real user data and member info
-        const groupChats: Conversation[] = [
-          // TODO: Query Firestore for group_chats collection
-          // For now, this uses the new enhancedGroupChatService
-        ];
+        // Load group chats with real user data
+        const groupChats = await realGroupChatService.getUserGroupChats(user.id);
+        const groupConversations: Conversation[] = await Promise.all(
+          groupChats.map(async chat => {
+            const members = await realGroupChatService.getMembers(chat.id);
+            return {
+              id: chat.id,
+              type: 'group' as const,
+              name: chat.name,
+              avatar: undefined, // Group chats can have custom avatars in future
+              last_message: chat.description || 'No messages yet',
+              last_message_time: chat.updated_at,
+              unread_count: 0,
+              member_count: members.length,
+              members: members.map(m => ({
+                id: m.user_id,
+                name: m.user_name,
+                avatar: m.user_avatar,
+                is_online: true,
+              })),
+              created_at: chat.created_at,
+            };
+          })
+        );
 
-        // Example of how to load group chats when implemented:
-        // const groupChatSnapshot = await getDocs(
-        //   query(
-        //     collection(db, 'group_chats'),
-        //     where('members', 'array-contains', user.id)
-        //   )
-        // );
-        // const groupChats: Conversation[] = await Promise.all(
-        //   groupChatSnapshot.docs.map(async (doc) => {
-        //     const chatData = doc.data() as GroupChatWithUsers;
-        //     return {
-        //       id: doc.id,
-        //       type: 'group' as const,
-        //       name: chatData.name,
-        //       avatar: chatData.avatar_url,
-        //       last_message: chatData.last_message,
-        //       last_message_time: chatData.last_message_at,
-        //       unread_count: 0,
-        //       members: chatData.members.map(m => ({
-        //         id: m.user_id,
-        //         name: m.user_name,
-        //         avatar: m.user_avatar,
-        //         is_online: true,
-        //       })),
-        //       created_at: chatData.created_at,
-        //     };
-        //   })
-        // );
+        // Combine and sort by last activity
+        const allChats = [...dmChats, ...groupConversations].sort((a, b) => {
+          const timeA = new Date(a.last_message_time || a.created_at).getTime();
+          const timeB = new Date(b.last_message_time || b.created_at).getTime();
+          return timeB - timeA;
+        });
 
-        setConversations([...dmChats, ...groupChats]);
+        setConversations(allChats);
       } catch (error) {
         console.error('Error loading conversations:', error);
+        toast.error('Failed to load conversations');
       } finally {
         setLoading(false);
       }
@@ -310,14 +314,74 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
           messageInput.trim(),
           'text'
         );
+        toast.success('Message sent!');
       } else {
         // Send group message
-        // TODO: Implement group message sending
+        await enhancedGroupChatService.postMessage(
+          selectedChat.id,
+          currentUser.id,
+          messageInput.trim(),
+          'text'
+        );
+        toast.success('Message sent!');
       }
 
       setMessageInput('');
     } catch (error) {
       console.error('Error sending message:', error);
+      toast.error('Failed to send message');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const handleStartDM = async () => {
+    if (!newChatEmail.trim() || !currentUser) return;
+
+    try {
+      setSendingMessage(true);
+
+      // Find user by email
+      const users = await usersService.searchUsers(newChatEmail);
+      if (!users || users.length === 0) {
+        toast.error('User not found');
+        return;
+      }
+
+      const targetUser = users[0];
+      const conversation = await directMessageBackend.getOrCreateConversation(
+        currentUser.id,
+        targetUser.id
+      );
+
+      // Add to conversations list if not already there
+      if (!conversations.find(c => c.id === conversation.id)) {
+        const newConv: Conversation = {
+          id: conversation.id,
+          type: 'direct',
+          name: targetUser.displayName || targetUser.email || targetUser.id,
+          avatar: targetUser.photoURL,
+          last_message: '',
+          unread_count: 0,
+          members: [
+            { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar, is_online: true },
+            { id: targetUser.id, name: targetUser.displayName || targetUser.email, avatar: targetUser.photoURL, is_online: true }
+          ],
+          created_at: conversation.created_at,
+        };
+        setConversations([newConv, ...conversations]);
+        selectChat(newConv);
+      } else {
+        const existing = conversations.find(c => c.id === conversation.id);
+        if (existing) selectChat(existing);
+      }
+
+      setNewChatEmail('');
+      setShowNewChatModal(false);
+      toast.success('Chat started!');
+    } catch (error) {
+      console.error('Error starting DM:', error);
+      toast.error('Failed to start chat');
     } finally {
       setSendingMessage(false);
     }
@@ -346,8 +410,12 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
         <div className="sidebar-header">
           <h1>Messages</h1>
           <div className="header-actions">
-            <button className="icon-button" title="New chat">
-              <Plus size={20} />
+            <button 
+              className="icon-button" 
+              title="New chat"
+              onClick={() => setShowNewChatModal(true)}
+            >
+              <MessageSquarePlus size={20} />
             </button>
             <button className="icon-button" title="More options">
               <MoreVertical size={20} />
@@ -387,15 +455,20 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
                   {conv.avatar ? (
                     <img src={conv.avatar} alt={conv.name} />
                   ) : (
-                    <div className="avatar-placeholder">
-                      {conv.name.charAt(0).toUpperCase()}
+                    <div className={`avatar-placeholder ${conv.type}`}>
+                      {conv.type === 'group' ? <Users size={24} /> : conv.name.charAt(0).toUpperCase()}
                     </div>
                   )}
                   {conv.type === 'group' && <span className="group-badge">👥</span>}
                 </div>
                 <div className="conversation-info">
                   <div className="conversation-header">
-                    <h3 className="conversation-name">{conv.name}</h3>
+                    <h3 className="conversation-name">
+                      {conv.name}
+                      {conv.type === 'group' && conv.member_count && (
+                        <span className="member-count">({conv.member_count})</span>
+                      )}
+                    </h3>
                     <span className="last-message-time">
                       {conv.last_message_time && formatTime(conv.last_message_time)}
                     </span>
@@ -424,14 +497,19 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
                   {selectedChat.avatar ? (
                     <img src={selectedChat.avatar} alt={selectedChat.name} />
                   ) : (
-                    <div className="avatar-placeholder">
-                      {selectedChat.name.charAt(0).toUpperCase()}
+                    <div className={`avatar-placeholder ${selectedChat.type}`}>
+                      {selectedChat.type === 'group' ? <Users size={20} /> : selectedChat.name.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="chat-details">
                   <h2>{selectedChat.name}</h2>
-                  <p className="chat-status">Active now</p>
+                  <p className="chat-status">
+                    {selectedChat.type === 'group' 
+                      ? `${selectedChat.member_count || 0} members`
+                      : 'Active now'
+                    }
+                  </p>
                 </div>
               </div>
               <div className="chat-actions">
@@ -461,7 +539,9 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
                     className={`message ${msg.sender_id === currentUser?.id ? 'sent' : 'received'}`}
                   >
                     <div className="message-bubble">
-                      <div className="message-sender-name">{msg.sender_name}</div>
+                      {selectedChat.type === 'group' && msg.sender_id !== currentUser?.id && (
+                        <div className="message-sender-name">{msg.sender_name}</div>
+                      )}
                       <p>{msg.content}</p>
                       <span className="message-time">
                         {new Date(msg.created_at).toLocaleTimeString([], {
@@ -473,6 +553,11 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
                   </div>
                 ))
               )}
+              {Array.from(typingUsers).map(userId => (
+                <div key={`typing-${userId}`} className="typing-indicator">
+                  <span></span><span></span><span></span>
+                </div>
+              ))}
               <div ref={messagesEndRef} />
             </div>
 
@@ -514,6 +599,53 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
           </div>
         )}
       </div>
+
+      {/* New Chat Modal */}
+      {showNewChatModal && (
+        <div className="modal-overlay" onClick={() => setShowNewChatModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Start a new chat</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowNewChatModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <input
+                type="email"
+                placeholder="Enter email address..."
+                value={newChatEmail}
+                onChange={(e) => setNewChatEmail(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleStartDM();
+                  }
+                }}
+                className="modal-input"
+                autoFocus
+              />
+              <div className="modal-actions">
+                <button 
+                  className="modal-button cancel"
+                  onClick={() => setShowNewChatModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="modal-button send"
+                  onClick={handleStartDM}
+                  disabled={!newChatEmail.trim() || sendingMessage}
+                >
+                  {sendingMessage ? 'Starting...' : 'Start Chat'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Close button for mobile */}
       {onClose && (

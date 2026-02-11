@@ -55,10 +55,10 @@ export interface AvatarFrame {
 }
 
 class AchievementService {
-  private STORAGE_KEY = 'avento_achievements';
-  private LEVEL_KEY = 'avento_user_level';
-  private FRAMES_KEY = 'avento_avatar_frames';
-  private QUESTS_KEY = 'avento_quests';
+  private STORAGE_KEY = 'civta_achievements';
+  private LEVEL_KEY = 'civta_user_level';
+  private FRAMES_KEY = 'civta_avatar_frames';
+  private QUESTS_KEY = 'civta_quests';
 
   /**
    * Get user level and XP

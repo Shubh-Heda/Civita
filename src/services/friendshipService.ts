@@ -46,7 +46,7 @@ export interface FriendshipConnection {
 }
 
 class FriendshipService {
-  private readonly STORAGE_KEY = 'avento_friendships';
+  private readonly STORAGE_KEY = 'civta_friendships';
 
   /**
    * Get all friendships for a user

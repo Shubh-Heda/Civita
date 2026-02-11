@@ -164,6 +164,26 @@ export function CulturalCommunityFeed({ onNavigate }: CulturalCommunityFeedProps
       </header>
 
       <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Discovery Hub Button */}
+        <motion.button
+          onClick={() => onNavigate('discovery')}
+          className="w-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-500/60 rounded-xl p-4 transition-all duration-300 group backdrop-blur-sm"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
+                <Sparkles size={20} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-slate-100 group-hover:text-purple-300 transition-colors">Discover Events</h3>
+                <p className="text-sm text-slate-400">Browse all cultural events & activities near you</p>
+              </div>
+            </div>
+          </div>
+        </motion.button>
+
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Categories</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

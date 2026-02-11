@@ -66,7 +66,7 @@ export interface GamingClub {
 }
 
 class GamingBackendService {
-  private storageKey = 'avento_gaming_sessions';
+  private storageKey = 'civita_gaming_sessions';
 
   /**
    * Create a new gaming session with auto-chat and community posting

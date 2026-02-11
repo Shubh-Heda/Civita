@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { directMessageBackend as directMessageService } from '../../services/directMessageBackend';
-import { firebaseAuth } from '../../services/firebaseService';
+import { supabaseAuth } from '../../services/supabaseAuthService';
 import './DirectMessageThread.css';
 
 interface DirectMessage {
@@ -42,9 +42,9 @@ export const DirectMessageThread: React.FC<DirectMessageThreadProps> = ({ conver
   useEffect(() => {
     let isMounted = true;
     const loadUser = async () => {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!isMounted) return;
-      setCurrentUserId(user?.uid ?? null);
+      setCurrentUserId(user?.id ?? null);
     };
 
     loadUser();

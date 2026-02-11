@@ -52,7 +52,7 @@ export interface ExpenseItem {
   created_at: string;
 }
 
-const STORAGE_KEY = 'avento_group_chats';
+const STORAGE_KEY = 'civta_group_chats';
 
 class GroupChatService {
   /**

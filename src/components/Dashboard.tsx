@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Users, Heart, Sparkles, User, MessageCircle, Calendar, TrendingUp, Star, MapPin, Shield, GraduationCap, Award, HelpCircle, CreditCard, Map, Trophy, Camera, Video, ArrowLeft } from 'lucide-react';
+import { Search, Filter, Users, Heart, Sparkles, User, MessageCircle, MessageSquarePlus, Calendar, TrendingUp, Star, MapPin, Shield, GraduationCap, Award, HelpCircle, CreditCard, Map, Trophy, Camera, Video, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { AventoLogo } from './AventoLogo';
 import { Input } from './ui/input';
@@ -41,7 +41,7 @@ interface UserProfile {
 }
 
 interface DashboardProps {
-  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'sports-community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'sports-chat' | 'help' | 'availability' | 'landing' | 'comprehensive-dashboard', turfId?: string, matchId?: string) => void;
+  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'sports-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'turf-detail' | 'sports-chat' | 'help' | 'availability' | 'landing' | 'comprehensive-dashboard', turfId?: string, matchId?: string) => void;
   userProfile: UserProfile;
   matches: Match[];
 }
@@ -56,7 +56,7 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
 
   // Check if user is new (first time visiting)
   useEffect(() => {
-    const hasSeenGuide = localStorage.getItem('avento_sports_guide_completed');
+    const hasSeenGuide = localStorage.getItem('civta_sports_guide_completed');
     if (!hasSeenGuide) {
       setShowFirstTimeGuide(true);
     }
@@ -289,28 +289,50 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
+            <Button
+              size="lg"
+              onClick={() => onNavigate('discovery')}
+              className="bg-gradient-to-r from-purple-600 via-violet-600 to-pink-600 hover:from-purple-700 hover:via-violet-700 hover:to-pink-700 text-white gap-3 h-auto py-4 shadow-lg hover:shadow-xl transition-all"
+            >
+              <Sparkles className="w-5 h-5" />
+              <div className="text-left flex-1">
+                <div className="font-bold">Discover Matches</div>
+                <div className="text-xs opacity-90">Browse all available plans near you</div>
+              </div>
+            </Button>
             <Button
               size="lg"
               onClick={() => onNavigate('availability')}
-              className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white gap-3 h-auto py-4"
+              className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-700 hover:via-blue-700 hover:to-indigo-700 text-white gap-3 h-auto py-4 shadow-lg hover:shadow-xl transition-all"
             >
               <TrendingUp className="w-5 h-5" />
               <div className="text-left flex-1">
-                <div>Find Players Available Now</div>
-                <div className="text-xs opacity-90">See who's free to play instantly</div>
+                <div className="font-bold">Available Now</div>
+                <div className="text-xs opacity-90">Find players free to play instantly</div>
               </div>
             </Button>
             <Button
               size="lg"
               variant="outline"
               onClick={() => onNavigate('create-match')}
-              className="border-cyan-500 text-cyan-600 hover:bg-cyan-50 gap-3 h-auto py-4"
+              className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 gap-3 h-auto py-4 hover:shadow-lg transition-all"
             >
               <Calendar className="w-5 h-5" />
               <div className="text-left flex-1">
-                <div>Create Match Plan</div>
+                <div className="font-bold">Create Match</div>
                 <div className="text-xs opacity-70">Schedule a new game</div>
+              </div>
+            </Button>
+            <Button
+              size="lg"
+              onClick={() => onNavigate('modern-chat')}
+              className="bg-gradient-to-r from-rose-500 via-pink-500 to-red-500 hover:from-rose-600 hover:via-pink-600 hover:to-red-600 text-white gap-3 h-auto py-4 shadow-lg hover:shadow-xl transition-all"
+            >
+              <MessageSquarePlus className="w-5 h-5" />
+              <div className="text-left flex-1">
+                <div className="font-bold">Messages</div>
+                <div className="text-xs opacity-90">Chat with your matches & friends</div>
               </div>
             </Button>
           </div>

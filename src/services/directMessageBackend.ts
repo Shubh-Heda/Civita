@@ -38,8 +38,8 @@ export interface Conversation {
 const FIREBASE_ENABLED = isFirebaseConfigured();
 
 const STORAGE_KEYS = {
-  conversations: 'avento_firebase_demo_conversations',
-  directMessages: 'avento_firebase_demo_direct_messages'
+  conversations: 'civita_firebase_demo_conversations',
+  directMessages: 'civita_firebase_demo_direct_messages'
 };
 
 function getConversationId(userId1: string, userId2: string) {

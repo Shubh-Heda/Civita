@@ -1,4 +1,4 @@
-# Avento - Sports & Events Connection Platform
+# Civita - Sports & Events Connection Platform
 
 Modern social platform built with **React + TypeScript + Vite** and powered by **Firebase**.
 
@@ -26,7 +26,7 @@ Server runs at: **http://localhost:3001**
 ## Firebase Setup
 
 ### 1. Get Firebase Credentials
-1. Go to [Firebase Console](https://console.firebase.google.com/project/avento-us)
+1. Go to [Firebase Console](https://console.firebase.google.com/project/civita-us)
 2. Click ⚙️ **Settings** → **Project Settings**
 3. Under "Your apps", click the **Web** icon
 4. Copy the config values
@@ -34,9 +34,9 @@ Server runs at: **http://localhost:3001**
 ### 2. Add to `.env.local`
 ```env
 VITE_FIREBASE_API_KEY="your_api_key"
-VITE_FIREBASE_AUTH_DOMAIN="avento-us.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="avento-us"
-VITE_FIREBASE_STORAGE_BUCKET="avento-us.firebasestorage.app"
+VITE_FIREBASE_AUTH_DOMAIN="civita-us.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID="civita-us"
+VITE_FIREBASE_STORAGE_BUCKET="civita-us.firebasestorage.app"
 VITE_FIREBASE_MESSAGING_SENDER_ID="your_sender_id"
 VITE_FIREBASE_APP_ID="your_app_id"
 ```

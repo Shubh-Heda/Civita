@@ -225,7 +225,7 @@ class WalletService {
       id: `txn-${Date.now()}-${Math.random()}`,
       type: 'referral_bonus',
       amount: bonusAmount,
-      description: 'Referral bonus - Friend joined Avento!',
+      description: 'Referral bonus - Friend joined Civta!',
       timestamp: new Date(),
       status: 'completed'
     };

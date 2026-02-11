@@ -32,7 +32,7 @@ export interface MVPOfKindness {
 }
 
 class GratitudeService {
-  private readonly STORAGE_KEY = 'avento_gratitude';
+  private readonly STORAGE_KEY = 'civta_gratitude';
 
   /**
    * Create a gratitude post

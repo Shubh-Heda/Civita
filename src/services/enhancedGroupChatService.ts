@@ -486,7 +486,7 @@ class EnhancedGroupChatService {
 
   // Local storage fallback methods...
   private async createGroupChatLocal(data: any) {
-    const chats = JSON.parse(localStorage.getItem('avento_group_chats') || '[]');
+    const chats = JSON.parse(localStorage.getItem('civta_group_chats') || '[]');
     const newChat = {
       id: `gc_${Date.now()}`,
       ...data,
@@ -496,12 +496,12 @@ class EnhancedGroupChatService {
       updated_at: new Date().toISOString(),
     };
     chats.push(newChat);
-    localStorage.setItem('avento_group_chats', JSON.stringify(chats));
+    localStorage.setItem('civita_group_chats', JSON.stringify(chats));
     return { id: newChat.id, data: newChat };
   }
 
   private async addMemberLocal(groupChatId: string, userId: string, shareAmount: number) {
-    const members = JSON.parse(localStorage.getItem('avento_group_chat_members') || '[]');
+    const members = JSON.parse(localStorage.getItem('civta_group_chat_members') || '[]');
     const newMember = {
       id: `gcm_${Date.now()}`,
       group_chat_id: groupChatId,
@@ -513,7 +513,7 @@ class EnhancedGroupChatService {
       time_joined_minutes: 0,
     };
     members.push(newMember);
-    localStorage.setItem('avento_group_chat_members', JSON.stringify(members));
+    localStorage.setItem('civta_group_chat_members', JSON.stringify(members));
     return newMember;
   }
 
@@ -523,7 +523,7 @@ class EnhancedGroupChatService {
     content: string,
     messageType: string
   ) {
-    const messages = JSON.parse(localStorage.getItem('avento_group_chat_messages') || '[]');
+    const messages = JSON.parse(localStorage.getItem('civta_group_chat_messages') || '[]');
     const newMessage = {
       id: `gcm_${Date.now()}`,
       group_chat_id: groupChatId,
@@ -535,13 +535,13 @@ class EnhancedGroupChatService {
       is_deleted: false,
     };
     messages.push(newMessage);
-    localStorage.setItem('avento_group_chat_messages', JSON.stringify(messages));
+    localStorage.setItem('civta_group_chat_messages', JSON.stringify(messages));
     return newMessage;
   }
 
   private getGroupChatLocal(groupChatId: string) {
-    const chats = JSON.parse(localStorage.getItem('avento_group_chats') || '[]');
-    const members = JSON.parse(localStorage.getItem('avento_group_chat_members') || '[]');
+    const chats = JSON.parse(localStorage.getItem('civita_group_chats') || '[]');
+    const members = JSON.parse(localStorage.getItem('civta_group_chat_members') || '[]');
     const chat = chats.find((c: any) => c.id === groupChatId);
     if (!chat) return null;
     chat.members = members.filter((m: any) => m.group_chat_id === groupChatId);
@@ -549,7 +549,7 @@ class EnhancedGroupChatService {
   }
 
   private getMessagesLocal(groupChatId: string) {
-    const messages = JSON.parse(localStorage.getItem('avento_group_chat_messages') || '[]');
+    const messages = JSON.parse(localStorage.getItem('civta_group_chat_messages') || '[]');
     return messages.filter((m: any) => m.group_chat_id === groupChatId);
   }
 
@@ -559,7 +559,7 @@ class EnhancedGroupChatService {
     amount: number,
     paidById: string
   ) {
-    const expenses = JSON.parse(localStorage.getItem('avento_group_chat_expenses') || '[]');
+    const expenses = JSON.parse(localStorage.getItem('civita_group_chat_expenses') || '[]');
     const newExpense = {
       id: `exp_${Date.now()}`,
       group_chat_id: groupChatId,
@@ -571,7 +571,7 @@ class EnhancedGroupChatService {
       created_at: new Date().toISOString(),
     };
     expenses.push(newExpense);
-    localStorage.setItem('avento_group_chat_expenses', JSON.stringify(expenses));
+    localStorage.setItem('civita_group_chat_expenses', JSON.stringify(expenses));
     return newExpense;
   }
 }

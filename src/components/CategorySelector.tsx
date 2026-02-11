@@ -68,7 +68,7 @@ export function CategorySelector({ onNavigate, onCategorySelect, userName = 'Fri
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 via-amber-400 to-pink-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
               <Sparkles className="w-5 h-5" />
             </div>
-            <div className="text-sm text-white/80">Avento · Pick a lane, we kept it even.</div>
+            <div className="text-sm text-white/80">Civta · Pick a lane, we kept it even.</div>
           </div>
           <div className="text-3xl md:text-4xl font-bold tracking-tight">Hey {userName}, choose how you want to vibe</div>
           <p className="text-white/70 max-w-2xl">Four tiles. Same size. Same layout. No surprises.</p>

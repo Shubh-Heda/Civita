@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       // Handle demo account
-      if (email === 'demo@avento.com' && password === 'demo123') {
+      if (email === 'demo@civita.com' && password === 'demo123') {
         const user: User = {
           id: 'demo_user',
           email: email,
@@ -148,10 +148,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(updatedUser);
       
       // Update localStorage for demo mode
-      const currentUser = localStorage.getItem('avento_current_user');
+      const currentUser = localStorage.getItem('civita_current_user');
       if (currentUser) {
         const userObj = JSON.parse(currentUser);
-        localStorage.setItem('avento_current_user', JSON.stringify({
+        localStorage.setItem('civita_current_user', JSON.stringify({
           ...userObj,
           user_metadata: {
             ...userObj.user_metadata,
@@ -165,8 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Trigger storage event for other listeners
         window.dispatchEvent(new StorageEvent('storage', {
-          key: 'avento_current_user',
-          newValue: localStorage.getItem('avento_current_user') || '',
+          key: 'civita_current_user',
+          newValue: localStorage.getItem('civita_current_user') || '',
         }));
       }
     }

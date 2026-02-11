@@ -157,7 +157,7 @@ export default function AventoDemo({ isPlaying }: AventoDemoProps) {
                 className="mb-8"
               >
                 <span className="bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent">
-                  Avento
+                  Civta
                 </span>
                 <span className="text-white"> Changes Everything</span>
               </motion.h2>
@@ -322,7 +322,7 @@ export default function AventoDemo({ isPlaying }: AventoDemoProps) {
                     transition={{ delay: 1.8 }}
                     className="text-center text-slate-300 text-sm mt-6"
                   >
-                    47 friends made through Avento! 🎉
+                    47 friends made through Civta! 🎉
                   </motion.p>
                 </motion.div>
               </div>
@@ -525,7 +525,7 @@ export default function AventoDemo({ isPlaying }: AventoDemoProps) {
                 transition={{ delay: 1.9 }}
                 className="inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 px-8 py-4 rounded-full text-white shadow-2xl"
               >
-                <span className="text-xl">Join Avento Today</span>
+                <span className="text-xl">Join Civta Today</span>
                 <ArrowRight className="w-6 h-6" />
               </motion.div>
             </div>

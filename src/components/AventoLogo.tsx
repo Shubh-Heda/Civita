@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface AventoLogoProps {
+interface CivitaLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   variant?: 'icon-only' | 'with-text' | 'full';
   className?: string;
@@ -10,7 +10,7 @@ export function AventoLogo({
   size = 'md', 
   variant = 'icon-only',
   className = '' 
-}: AventoLogoProps) {
+}: CivitaLogoProps) {
   const sizeMap = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
@@ -29,8 +29,8 @@ export function AventoLogo({
     <div className={`flex items-center gap-2 ${className}`}>
       {/* Logo Image */}
       <img
-        src="/assets/avento-logo.png"
-        alt="Avento Logo"
+        src="/assets/civta-logo.png"
+        alt="Civita Logo"
         className={`${sizeMap[size]} object-contain flex-shrink-0`}
       />
 
@@ -38,7 +38,7 @@ export function AventoLogo({
       {variant === 'with-text' && (
         <div className="flex flex-col leading-tight">
           <span className={`font-bold bg-gradient-to-r from-blue-500 via-pink-500 to-orange-500 bg-clip-text text-transparent ${textSizeMap[size]}`}>
-            AVENTO
+            CIVTA
           </span>
         </div>
       )}
@@ -46,7 +46,7 @@ export function AventoLogo({
       {variant === 'full' && (
         <div className="flex flex-col">
           <span className={`font-bold bg-gradient-to-r from-blue-500 via-pink-500 to-orange-500 bg-clip-text text-transparent ${textSizeMap[size]}`}>
-            AVENTO
+            CIVTA
           </span>
           <span className="text-xs text-slate-500 leading-tight">Matchmaking the spot of friendships</span>
         </div>

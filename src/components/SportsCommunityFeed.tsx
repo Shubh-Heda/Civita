@@ -216,6 +216,29 @@ export function SportsCommunityFeed({ onNavigate }: SportsCommunityFeedProps) {
           </div>
         </div>
 
+        {/* Quick Access Button to Discovery Hub */}
+        <motion.button
+          onClick={() => onNavigate('discovery')}
+          className="w-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-500/60 rounded-xl p-4 transition-all duration-300 group"
+          whileHover={{ scale: 1.01, borderColor: 'rgba(168, 85, 247, 0.8)' }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                <Sparkles size={20} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-slate-100 group-hover:text-purple-300 transition-colors">Discover Matches</h3>
+                <p className="text-sm text-slate-400">Browse all available plans, events & games near you</p>
+              </div>
+            </div>
+            <div className="text-purple-400 group-hover:text-purple-300 transition-colors">
+              <ChevronDown className="rotate-90" size={20} />
+            </div>
+          </div>
+        </motion.button>
+
         {/* Category-Specific Content */}
         <AnimatePresence mode="wait">
           {selectedCategory === 'match-notifications' && (

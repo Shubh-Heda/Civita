@@ -9,10 +9,11 @@ import { AnimatedBackground } from './AnimatedBackground';
 import { toast } from 'sonner';
 import { generateUpcomingDates, getMinBookingDate } from '../utils/dateUtils';
 import { realGroupChatService } from '../services/groupChatServiceReal';
-import { firebaseAuth } from '../services/firebaseService';
+import { supabaseAuth } from '../services/supabaseAuthService';
 import { communityService } from '../services/communityService';
 import { pricingService } from '../services/pricingService';
 import { deadlineReminderService } from '../services/deadlineReminderService';
+import { matchNotificationService } from '../services/matchNotificationService';
 import { supabase, supabaseEnabled } from '../lib/supabaseClient';
 
 interface CreateMatchPlanProps {
@@ -160,6 +161,10 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
     const matchDateTime = new Date(`${selectedDate} ${selectedTime}`);
     const deadlineInfo = pricingService.calculatePaymentDeadline(matchDateTime);
     
+    // Get current user info
+    const user = await supabaseAuth.getCurrentUser();
+    const organizerName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Anonymous';
+    
     const match = {
       id: matchId,
       title: matchTitle,
@@ -178,139 +183,38 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
       paymentDeadline: deadlineInfo.deadline.toISOString(),
     };
 
-    let createdGroupChatId: string | undefined;
-    // Auto-create group chat for the match
-    try {
-      const user = firebaseAuth.getCurrentUser();
-      
-      if (user && supabaseEnabled && supabase) {
-        // Save match to Supabase
-        const { data: matchData, error: matchError } = await supabase
-          .from('matches')
-          .insert({
-            id: matchId,
-            user_id: user.id,
-            title: matchTitle,
-            turf_name: selectedTurf?.name || '',
-            date: selectedDate,
-            time: selectedTime,
-            sport: selectedTurf?.sport || '',
-            status: 'upcoming',
-            visibility: visibility,
-            payment_option: paymentMethod === 'direct' ? 'direct' : 'split',
-            amount: getTurfCost(),
-            location: selectedTurf?.location || '',
-            min_players: parseInt(minPlayers),
-            max_players: parseInt(maxPlayers),
-            turf_cost: getTurfCost(),
-            payment_deadline: deadlineInfo.deadline.toISOString(),
-            category: 'sports'
-          })
-          .select()
-          .single();
+    // Trigger notification broadcast for match creation
+    const notificationData = {
+      matchId: match.id,
+      title: match.title,
+      organizer: organizerName,
+      sport: match.sport,
+      turfName: match.turfName,
+      location: match.location,
+      date: match.date,
+      time: match.time,
+      minPlayers: match.minPlayers,
+      currentPlayers: 1, // organizer is the first player
+      visibility: visibility as 'community' | 'nearby' | 'private',
+    };
 
-        if (matchError) {
-          console.error('Error saving match:', matchError);
-        } else {
-          console.log('✅ Match saved to Supabase:', matchData);
-        }
-
-        // Schedule deadline reminders for the organizer
-        deadlineReminderService.createReminder(
-          matchId,
-          user.id,
-          deadlineInfo.deadline
-        );
-
-        // Store reminder for other users when they join
-        localStorage.setItem(
-          `match_deadline_${matchId}`,
-          JSON.stringify({
-            deadline: deadlineInfo.deadline.toISOString(),
-            paymentWindowDuration: deadlineInfo.paymentWindowDuration,
-            createdAt: new Date().toISOString(),
-          })
-        );
-        
-        // Create group chat for this match (name = match title)
-        const groupChat = await realGroupChatService.createGroupChat(
-          matchId,
-          matchTitle,
-          `Group chat for ${matchTitle} at ${selectedTurf?.name || 'venue'} on ${selectedDate}`,
-          user.id,
-          user.user_metadata?.full_name || user.email || 'Organizer',
-          user.email || 'organizer@example.com'
-        );
-
-        createdGroupChatId = groupChat.id;
-        console.log('✅ Group chat created:', groupChat.id);
-
-        // Send welcome system message
-        const paymentInfo = paymentMethod === 'direct'
-          ? `💰 Cost: ₹${getTurfCost()} total\n💳 Payment: Direct booking with payment required upfront`
-          : `💰 Cost: ₹${getTurfCost()} (₹${Math.round(getTurfCost() / parseInt(minPlayers))} per person)\n💳 Payment: 5-step process - Opens after ${minPlayers} players join`;
-
-        await realGroupChatService.sendMessage(
-          groupChat.id,
-          user.id,
-          user.user_metadata?.full_name || user.email || 'Organizer',
-          `🎉 Welcome to ${matchTitle}!\n\n📍 Venue: ${selectedTurf?.name || 'TBD'}\n📅 Date: ${selectedDate}\n⏰ Time: ${selectedTime}\n\n${paymentInfo}\n\nLet's make this match amazing! 🚀`,
-          'system'
-        );
-
-        // Auto-post to community if community visibility
-        if (visibility === 'community') {
-          try {
-            const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Match Organizer';
-            await communityService.createPost({
-              area: 'sports',
-              authorId: user.id,
-              authorName: userName,
-              authorAvatar: `https://i.pravatar.cc/150?u=${user.id}`,
-              title: `🎯 ${matchTitle} - Join Us Now!`,
-              content: `📍 ${selectedTurf?.name || 'Venue'}, ${selectedTurf?.location || 'Location'}\n📅 ${selectedDate} at ${selectedTime}\n${selectedTurf?.sport ? selectedTurf.sport : 'Sport'}\n\n👥 Looking for ${minPlayers}-${maxPlayers} players\n💰 ₹${getTurfCost()} total (₹${Math.round(getTurfCost() / parseInt(minPlayers))} per person)\n\n🎯 Join now! Slots filling fast! 🔥`,
-              category: 'event'
-            });
-
-            toast.success('Posted to Community! 🌟', {
-              description: 'Your match is now visible to everyone!',
-            });
-          } catch (error) {
-            console.error('Failed to post to community:', error);
-          }
-        }
-
-        toast.success('Match & Chat Created! 🎉', {
-          description: 'Match and group chat saved to database!',
-        });
-      } else {
-        // Demo mode - no backend
-        toast.success('Match Plan Created! 🎉', {
-          description: 'Group chat will be created when you sign in!',
-        });
-      }
-    } catch (error) {
-      console.error('Error creating match/chat:', error);
-      // Still show success for match creation
-      toast.success('Match Created! 🎉', {
-        description: 'Group chat will be available soon.',
-      });
-    }
-
-    // Show success message based on visibility
-    const visibilityMessage = visibility === 'community' 
-      ? 'Open to all!'
-      : visibility === 'nearby'
-      ? 'Visible to nearby players!'
-      : 'Private match created!';
-
-    // Call onMatchCreate with the match object FIRST
-    await onMatchCreate(match);
+    // Save match to discoverable list (for Discovery Hub)
+    matchNotificationService.saveMatchToDiscoverable(notificationData);
     
-    // Short delay then navigate to chat
-    setTimeout(() => {
-      onNavigate('group-chat', undefined, undefined, createdGroupChatId || matchId);
-    }, 1500);
+    // Notify community/nearby users
+    matchNotificationService.notifyNewMatchCreated(notificationData, user?.id || 'user');
+
+    // Delegate saving and chat-creation to app-level handler
+    try {
+      await onMatchCreate(match);
+      toast.success('Match Created! 🎉', { description: 'Opening group chat and notifying community...' });
+    } catch (err) {
+      console.error('Error in onMatchCreate:', err);
+      toast.info('Match Plan Created! 🎉', { description: 'Group chat will be created when available.' });
+    }
+    
+    // Navigation to the group chat is handled by the app-level `onMatchCreate`.
+    // Avoid double-navigation here which can overwrite the correct chat id.
   };
 
   const filteredTurfs = turfs.filter(turf =>

@@ -50,8 +50,8 @@ export interface HangoutPoll {
 }
 
 class PostMatchService {
-  private readonly MEMORIES_KEY = 'avento_post_match_memories';
-  private readonly POLLS_KEY = 'avento_hangout_polls';
+  private readonly MEMORIES_KEY = 'civta_post_match_memories';
+  private readonly POLLS_KEY = 'civta_hangout_polls';
 
   /**
    * Create a post-match memory

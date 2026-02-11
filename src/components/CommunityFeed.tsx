@@ -44,7 +44,7 @@ interface Match {
 }
 
 interface CommunityFeedProps {
-  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'chat' | 'availability' | 'map-view', turfId?: string, matchId?: string) => void;
+  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'turf-detail' | 'chat' | 'availability' | 'map-view', turfId?: string, matchId?: string) => void;
   matches: Match[];
 }
 
@@ -385,6 +385,29 @@ export function CommunityFeed({ onNavigate, matches }: CommunityFeedProps) {
       </header>
 
       <div className="relative z-20 max-w-6xl mx-auto px-4 py-8 space-y-6">
+        {/* Discovery Hub Button - Prominent */}
+        <motion.button
+          onClick={() => onNavigate('discovery')}
+          className="w-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-500/60 rounded-xl p-4 transition-all duration-300 group backdrop-blur-sm"
+          whileHover={{ scale: 1.01, borderColor: 'rgba(168, 85, 247, 0.8)' }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
+                <Sparkles size={20} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-slate-100 group-hover:text-purple-300 transition-colors">Discover Matches</h3>
+                <p className="text-sm text-slate-400">Browse all available plans, events & games near you</p>
+              </div>
+            </div>
+            <div className="text-purple-400 group-hover:text-purple-300 transition-colors">
+              <ChevronDown className="rotate-90" size={20} />
+            </div>
+          </div>
+        </motion.button>
+
         {/* Category Selector - Amazing Design */}
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Categories</h2>

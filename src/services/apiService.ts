@@ -40,7 +40,7 @@ class ApiService {
   async login(email: string, password: string): Promise<any> {
     // Demo account credentials
     const demoAccounts = {
-      'demo@avento.com': { password: 'demo123', name: 'Shubh Heda', demoAccount: true },
+      'demo@civta.com': { password: 'demo123', name: 'Shubh Heda', demoAccount: true },
       'demo@gamesetgo.com': { password: 'demo123', name: 'Demo User', demoAccount: true },
     };
 
@@ -93,7 +93,7 @@ class ApiService {
   }
 
   async logout(): Promise<void> {
-    localStorageService.remove('avento_user_profile');
+    localStorageService.remove('civta_user_profile');
   }
 
   // ============================================

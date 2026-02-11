@@ -171,7 +171,7 @@ class CommunityService {
         authorName: 'Vikram Reddy',
         authorAvatar: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=100',
         title: 'Hit my 50-game milestone! 🎉',
-        content: 'Just completed my 50th match on Avento! Thank you to this amazing community for all the memories. From a nervous newbie to a confident player - what a journey!',
+        content: 'Just completed my 50th match on Civta! Thank you to this amazing community for all the memories. From a nervous newbie to a confident player - what a journey!',
         category: 'achievement',
         timestamp: new Date(now - 24 * 60 * 60 * 1000),
         likes: 48,

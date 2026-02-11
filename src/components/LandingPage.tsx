@@ -13,7 +13,7 @@ import { ColorfulBackground } from './ColorfulBackground';
 import Traction from './Traction';
 import { supabase } from '../lib/supabase';
 
-const AventoDemo: LazyExoticComponent<ComponentType<{ isPlaying: boolean }>> = lazy(() => import('./AventoDemo').then(m => ({ default: (m as any).default || (m as any).AventoDemo })) as any);
+const AventoDemo: LazyExoticComponent<ComponentType<{ isPlaying: boolean }>> = lazy(() => import('./AventoDemo').then(m => ({ default: (m as any).default || (m as any).CivtaDemo })) as any);
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -107,7 +107,7 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
       answer: "Absolutely! You can set visibility to 'Private' and invite specific friends. You can also choose 'Nearby' to connect with players in your area or 'Community' to open it up to everyone."
     },
     {
-      question: "What makes Avento different from other booking platforms?",
+      question: "What makes Civita different from other booking platforms?",
       answer: "We're friendship-first, not just coordination. Every feature—from Trust Scores to post-match reflections—is designed to help you build genuine connections, not just fill slots."
     }
   ];
@@ -225,7 +225,7 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
       }
       setFeedbackSubmitted(true);
       toast.success('Feedback recorded! Thank you for your input.', {
-        description: 'We appreciate your thoughts and will use them to improve Avento.',
+        description: 'We appreciate your thoughts and will use them to improve Civita.',
         duration: 4000,
       });
       setTimeout(() => {
@@ -242,7 +242,7 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
   };
 
   return (
-    <div className="min-h-screen avento-hero-bg overflow-hidden relative text-white">
+    <div className="min-h-screen civita-hero-bg overflow-hidden relative text-white">
       {/* Colorful Animated Background */}
       <ColorfulBackground />
       
@@ -269,7 +269,7 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
             >
               {/* Demo Video Container */}
               <div className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20">
-                {/* Avento Animated Demo */}
+                {/* Civita Animated Demo */}
                 <div className="w-full aspect-video">
                   <Suspense fallback={<div className="w-full h-full bg-black/60 flex items-center justify-center text-white/60">Loading demo…</div>}>
                     <AventoDemo isPlaying={isDemoPlaying} />
@@ -406,7 +406,7 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
                   backgroundClip: "text",
                 }}
               >
-                Avento
+                Civita
               </motion.h1>
               <motion.p 
                 className="text-xs bg-gradient-to-r from-cyan-200 to-amber-200 bg-clip-text text-transparent"
@@ -1221,7 +1221,7 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
           >
             <h2 className="mb-4 text-slate-900 text-3xl md:text-5xl font-black tracking-tight">Frequently Asked <span className="text-indigo-600">Questions</span></h2>
             <p className="text-slate-800 text-xl md:text-2xl font-semibold">
-              Everything you need to know about Avento.
+              Everything you need to know about Civita.
             </p>
           </motion.div>
 
@@ -1305,7 +1305,7 @@ export function LandingPage({ onGetStarted, onCategorySelect }: LandingPageProps
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-amber-400 rounded-lg flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <span className="bg-gradient-to-r from-cyan-300 to-amber-200 bg-clip-text text-transparent text-2xl font-bold">Avento</span>
+            <span className="bg-gradient-to-r from-cyan-300 to-amber-200 bg-clip-text text-transparent text-2xl font-bold">Civita</span>
           </div>
           <p className="text-center text-white text-lg font-semibold">
             Where Every Moment Becomes a Memory.

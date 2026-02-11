@@ -140,6 +140,43 @@ class TrustScoreService {
     if (error) throw error;
   }
 
+  async recordAction(action: {
+    type: string;
+    userId: string;
+    timestamp?: Date;
+    impact?: number;
+    matchId?: string;
+  }): Promise<void> {
+    // Map action types to score types and impacts
+    const actionMapping: Record<string, { scoreType: 'reliability_score' | 'behavior_score' | 'community_score', impact: number }> = {
+      'match_completed': { scoreType: 'reliability_score', impact: 5 },
+      'match_attended': { scoreType: 'reliability_score', impact: 3 },
+      'no_show': { scoreType: 'reliability_score', impact: -10 },
+      'late_cancellation': { scoreType: 'reliability_score', impact: -5 },
+      'early_cancellation': { scoreType: 'reliability_score', impact: -2 },
+      'positive_feedback': { scoreType: 'behavior_score', impact: 5 },
+      'negative_feedback': { scoreType: 'behavior_score', impact: -5 },
+      'post_created': { scoreType: 'community_score', impact: 2 },
+      'helpful_comment': { scoreType: 'community_score', impact: 3 },
+    };
+
+    const mapping = actionMapping[action.type];
+    if (mapping) {
+      try {
+        await this.updateScore(
+          action.userId,
+          mapping.scoreType,
+          action.impact || mapping.impact,
+          action.type,
+          action.matchId
+        );
+      } catch (error) {
+        // Silently fail for mock data generation to avoid blocking initialization
+        console.warn(`Failed to record action ${action.type}:`, error);
+      }
+    }
+  }
+
   async updateScore(
     userId: string,
     scoreType: 'reliability_score' | 'behavior_score' | 'community_score',

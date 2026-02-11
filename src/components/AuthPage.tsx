@@ -27,7 +27,7 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
     setTimeout(async () => {
       setLoading(true);
       try {
-        const { data, error } = await signIn('demo@avento.com', 'demo123');
+        const { data, error } = await signIn('demo@civita.com', 'demo123');
         
         if (error) {
           console.error('Demo login error:', error);
@@ -87,7 +87,7 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
                 <AventoLogo size="lg" variant="icon-only" />
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 via-purple-600 to-orange-600 bg-clip-text text-transparent">
-                    AVENTO
+                    CIVITA
                   </h1>
                   <p className="text-sm text-slate-500">Matchmaking the Sport of Friendships</p>
                 </div>
@@ -227,7 +227,7 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
                             <strong>Try Demo Account (Shubh's Profile)</strong>
                           </p>
                           <p className="text-xs text-blue-700 font-mono">
-                            Email: demo@avento.com<br/>
+                            Email: demo@civita.com<br/>
                             Password: demo123
                           </p>
                           <p className="text-xs text-blue-600 mt-2">

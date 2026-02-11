@@ -9,10 +9,10 @@ const SUPABASE_ENABLED = supabaseEnabled && supabase !== null;
 
 // Local storage keys for demo mode
 const STORAGE_KEYS = {
-  users: 'avento_supabase_demo_users',
-  events: 'avento_supabase_demo_events',
-  matches: 'avento_supabase_demo_matches',
-  feedback: 'avento_supabase_demo_feedback',
+  users: 'civita_supabase_demo_users',
+  events: 'civita_supabase_demo_events',
+  matches: 'civita_supabase_demo_matches',
+  feedback: 'civita_supabase_demo_feedback',
 };
 
 // ==================== Authentication ====================
@@ -34,7 +34,7 @@ export const supabaseAuth = {
       const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
       users.push(mockUser);
       localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-      localStorage.setItem('avento_current_user', JSON.stringify(mockUser));
+      localStorage.setItem('civta_current_user', JSON.stringify(mockUser));
 
       console.log('✅ [DEMO] User registered:', displayName);
       return { user: mockUser, error: null };
@@ -80,7 +80,7 @@ export const supabaseAuth = {
         return { user: null, error: 'User not found' };
       }
 
-      localStorage.setItem('avento_current_user', JSON.stringify(user));
+      localStorage.setItem('civta_current_user', JSON.stringify(user));
       console.log('✅ [DEMO] User signed in:', email);
       return { user, error: null };
     }
@@ -118,7 +118,7 @@ export const supabaseAuth = {
       const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
       users.push(mockUser);
       localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-      localStorage.setItem('avento_current_user', JSON.stringify(mockUser));
+      localStorage.setItem('civta_current_user', JSON.stringify(mockUser));
 
       // Also create profile in "Supabase"
       await userProfileService.upsertProfile(mockUser.id, {
@@ -154,7 +154,7 @@ export const supabaseAuth = {
   signOut: async () => {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE
-      localStorage.removeItem('avento_current_user');
+      localStorage.removeItem('civta_current_user');
       console.log('✅ [DEMO] User signed out');
       return { error: null };
     }
@@ -175,7 +175,7 @@ export const supabaseAuth = {
   getCurrentUser: async () => {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE
-      const user = localStorage.getItem('avento_current_user');
+      const user = localStorage.getItem('civta_current_user');
       return user ? JSON.parse(user) : null;
     }
 
@@ -194,12 +194,12 @@ export const supabaseAuth = {
   onAuthStateChanged: (callback: (user: any) => void) => {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE: Check localStorage
-      const user = localStorage.getItem('avento_current_user');
+      const user = localStorage.getItem('civta_current_user');
       callback(user ? JSON.parse(user) : null);
 
       // Listen to storage changes
       const handleStorageChange = () => {
-        const updatedUser = localStorage.getItem('avento_current_user');
+        const updatedUser = localStorage.getItem('civta_current_user');
         callback(updatedUser ? JSON.parse(updatedUser) : null);
       };
 
@@ -317,6 +317,27 @@ export const usersService = {
     } catch (error) {
       console.error('Error getting online users:', error);
       return 0;
+    }
+  },
+
+  // Search users by email
+  searchUsers: async (query: string) => {
+    if (!SUPABASE_ENABLED) {
+      const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
+      return users.filter((u: any) => u.email.toLowerCase().includes(query.toLowerCase()));
+    }
+
+    try {
+      const { data, error } = await supabase!
+        .from('profiles')
+        .select('*')
+        .or(`email.ilike.%${query}%,full_name.ilike.%${query}%`);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error searching users:', error);
+      return [];
     }
   },
 };

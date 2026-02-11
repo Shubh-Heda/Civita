@@ -25,7 +25,7 @@ export interface UserPreferences {
 }
 
 class PersonalizationService {
-  private STORAGE_KEY = 'avento_personalization';
+  private STORAGE_KEY = 'civta_personalization';
 
   /**
    * Get available themes

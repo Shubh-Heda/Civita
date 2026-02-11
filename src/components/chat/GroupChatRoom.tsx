@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { groupChatService } from '../../services/groupChatService';
-import { firebaseAuth } from '../../services/firebaseService';
+import { supabaseAuth } from '../../services/supabaseAuthService';
 import './GroupChatRoom.css';
 
 interface GroupChatMessage {
@@ -50,9 +50,9 @@ export const GroupChatRoom: React.FC<GroupChatRoomProps> = ({ groupChatId, onNav
   useEffect(() => {
     let isMounted = true;
     const loadUser = async () => {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!isMounted) return;
-      setCurrentUserId(user?.uid ?? null);
+      setCurrentUserId(user?.id ?? null);
     };
 
     loadUser();
