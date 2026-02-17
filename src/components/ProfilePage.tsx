@@ -28,7 +28,7 @@ interface Match {
 }
 
 interface ProfilePageProps {
-  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'chat' | 'availability', turfId?: string, matchId?: string) => void;
+  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'chat' | 'availability' | 'match-history', turfId?: string, matchId?: string) => void;
   onProfileUpdate: (profile: UserProfile) => void;
   userProfile: UserProfile;
   matches: Match[];
@@ -280,7 +280,12 @@ export function ProfilePage({ onNavigate, onProfileUpdate, userProfile, matches 
 
         {/* Match History */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="mb-6">Recent Matches ({matches.length})</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2>My Matches ({matches.length})</h2>
+            <Button variant="outline" onClick={() => onNavigate('match-history')}>
+              View All
+            </Button>
+          </div>
           
           {matches.length > 0 ? (
             <div className="space-y-4">

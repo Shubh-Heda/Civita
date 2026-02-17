@@ -44,6 +44,17 @@ CREATE TABLE IF NOT EXISTS matches (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Match participants table (tracks every match a user plays)
+CREATE TABLE IF NOT EXISTS match_participants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id UUID REFERENCES matches(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT CHECK (role IN ('organizer', 'player')) DEFAULT 'player',
+  status TEXT CHECK (status IN ('joined', 'paid', 'confirmed', 'completed', 'cancelled')) DEFAULT 'joined',
+  joined_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(match_id, user_id)
+);
+
 -- Group Chats table
 CREATE TABLE IF NOT EXISTS group_chats (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -121,6 +132,7 @@ CREATE TABLE IF NOT EXISTS direct_messages (
 -- Enable Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE match_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE group_chats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
@@ -165,6 +177,28 @@ CREATE POLICY "Users can update own matches"
 
 CREATE POLICY "Users can delete own matches"
   ON matches FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Match participants policies (drop existing first)
+DROP POLICY IF EXISTS "Match participants viewable by members" ON match_participants;
+DROP POLICY IF EXISTS "Users can join matches" ON match_participants;
+DROP POLICY IF EXISTS "Users can update their participation" ON match_participants;
+DROP POLICY IF EXISTS "Users can leave matches" ON match_participants;
+
+CREATE POLICY "Match participants viewable by members"
+  ON match_participants FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can join matches"
+  ON match_participants FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their participation"
+  ON match_participants FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can leave matches"
+  ON match_participants FOR DELETE
   USING (auth.uid() = user_id);
 
 -- Group chats policies (drop existing first)
@@ -269,10 +303,30 @@ CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_direct_messages_conversation_id ON direct_messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_users ON conversations(user1_id, user2_id);
 
--- Enable realtime for chat
-ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE chat_members;
-ALTER PUBLICATION supabase_realtime ADD TABLE direct_messages;
+-- Enable realtime for chat (safe if tables are missing or already added)
+DO $$
+BEGIN
+  IF to_regclass('public.chat_messages') IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'chat_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
+  END IF;
+
+  IF to_regclass('public.chat_members') IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'chat_members'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_members;
+  END IF;
+
+  IF to_regclass('public.direct_messages') IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'direct_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.direct_messages;
+  END IF;
+END $$;
 
 -- Success message
 SELECT 'Database setup complete! 🎉' AS message;

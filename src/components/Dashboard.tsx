@@ -41,7 +41,7 @@ interface UserProfile {
 }
 
 interface DashboardProps {
-  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'sports-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'turf-detail' | 'sports-chat' | 'help' | 'availability' | 'landing' | 'comprehensive-dashboard', turfId?: string, matchId?: string) => void;
+  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'sports-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'turf-detail' | 'sports-chat' | 'help' | 'availability' | 'landing' | 'comprehensive-dashboard' | 'match-history', turfId?: string, matchId?: string) => void;
   userProfile: UserProfile;
   matches: Match[];
 }
@@ -333,6 +333,18 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
               <div className="text-left flex-1">
                 <div className="font-bold">Messages</div>
                 <div className="text-xs opacity-90">Chat with your matches & friends</div>
+              </div>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => onNavigate('match-history')}
+              className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-3 h-auto py-4 hover:shadow-lg transition-all"
+            >
+              <Trophy className="w-5 h-5" />
+              <div className="text-left flex-1">
+                <div className="font-bold">My Matches</div>
+                <div className="text-xs opacity-70">See every match you've played</div>
               </div>
             </Button>
           </div>

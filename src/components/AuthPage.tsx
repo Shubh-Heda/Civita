@@ -217,48 +217,50 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
                     )}
                   </Button>
 
-                  {/* Demo credentials */}
-                  <div className="space-y-3">
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-start gap-2 mb-2">
-                        <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-xs text-blue-900 mb-1">
-                            <strong>Try Demo Account (Shubh's Profile)</strong>
-                          </p>
-                          <p className="text-xs text-blue-700 font-mono">
-                            Email: demo@civita.com<br/>
-                            Password: demo123
-                          </p>
-                          <p className="text-xs text-blue-600 mt-2">
-                            ✨ Full access to all features with pre-loaded data
-                          </p>
+                  {/* Demo credentials - localhost only */}
+                  {!import.meta.env.PROD && (
+                    <div className="space-y-3">
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start gap-2 mb-2">
+                          <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs text-blue-900 mb-1">
+                              <strong>Try Demo Account (Shubh's Profile)</strong>
+                            </p>
+                            <p className="text-xs text-blue-700 font-mono">
+                              Email: demo@civita.com<br/>
+                              Password: demo123
+                            </p>
+                            <p className="text-xs text-blue-600 mt-2">
+                              ✨ Full access to all features with pre-loaded data
+                            </p>
+                          </div>
                         </div>
                       </div>
+                      
+                      <Button
+                        type="button"
+                        onClick={handleDemoLogin}
+                        disabled={loading || initializingDemo || !demoUserReady}
+                        variant="outline"
+                        className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
+                      >
+                        {initializingDemo ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Setting up demo...
+                          </>
+                        ) : !demoUserReady ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Preparing demo...
+                          </>
+                        ) : (
+                          '🎮 Try Demo Account'
+                        )}
+                      </Button>
                     </div>
-                    
-                    <Button
-                      type="button"
-                      onClick={handleDemoLogin}
-                      disabled={loading || initializingDemo || !demoUserReady}
-                      variant="outline"
-                      className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
-                    >
-                      {initializingDemo ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Setting up demo...
-                        </>
-                      ) : !demoUserReady ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Preparing demo...
-                        </>
-                      ) : (
-                        '🎮 Try Demo Account'
-                      )}
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </div>
             )}

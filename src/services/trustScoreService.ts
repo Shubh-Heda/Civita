@@ -92,6 +92,16 @@ class TrustScoreService {
     return data;
   }
 
+  // Synchronous method for backward compatibility
+  getTrustScore(userId: string): { overall: number; completedMatches: number } {
+    // Return default values for synchronous access
+    // This is used during initialization before async data is loaded
+    return {
+      overall: 75,
+      completedMatches: 0
+    };
+  }
+
   async getScoreHistory(userId: string, limit = 50): Promise<TrustScoreHistory[]> {
     const { data, error} = await supabase
       .from('trust_score_history')
@@ -116,6 +126,39 @@ class TrustScoreService {
 
     if (error) throw error;
     return data || [];
+  }
+
+  async getTrustScoreSummary(userId: string): Promise<any> {
+    const score = await this.getUserScore(userId);
+    if (!score) {
+      // Return default summary if no score exists
+      return {
+        overall: 75,
+        reliability: 75,
+        behavior: 75,
+        community: 75,
+        badges: [],
+        level: 1
+      };
+    }
+    return {
+      overall: score.overall_score,
+      reliability: score.reliability_score,
+      behavior: score.behavior_score,
+      community: score.community_score,
+      badges: score.badges || [],
+      level: score.level
+    };
+  }
+
+  async getTopTrustedUsers(limit = 10): Promise<any[]> {
+    const leaderboard = await this.getLeaderboard(limit);
+    return leaderboard.map(score => ({
+      userId: score.user_id,
+      overallScore: score.overall_score,
+      isVerified: score.is_verified,
+      badges: score.badges || []
+    }));
   }
 
   // ==================== SCORE UPDATES ====================

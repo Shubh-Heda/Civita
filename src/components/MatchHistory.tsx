@@ -1,10 +1,12 @@
 import { ArrowLeft, Calendar, MapPin, Trophy, Clock, Users, DollarSign, CheckCircle, XCircle, Filter, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { matchService } from '../services/backendService';
 
 interface MatchHistoryProps {
   onNavigate: (page: string) => void;
   onBack: () => void;
+  userId?: string;
 }
 
 type Category = 'sports' | 'events' | 'gaming';
@@ -27,18 +29,23 @@ interface HistoryItem {
   gameType?: string;
 }
 
-export function MatchHistory({ onNavigate, onBack }: MatchHistoryProps) {
+export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Load history from localStorage
-    const loadHistory = () => {
-      const sportsMatches = JSON.parse(localStorage.getItem('sportsMatches') || '[]');
+    const loadHistory = async () => {
+      setIsLoading(true);
       const eventsBookings = JSON.parse(localStorage.getItem('eventsBookings') || '[]');
       const gamingMatches = JSON.parse(localStorage.getItem('gamingMatches') || '[]');
+
+      const sportsMatches = userId
+        ? await matchService.getUserMatches(userId, 'sports')
+        : JSON.parse(localStorage.getItem('sportsMatches') || '[]');
 
       const allItems: HistoryItem[] = [
         ...sportsMatches.map((match: any) => ({
@@ -47,13 +54,13 @@ export function MatchHistory({ onNavigate, onBack }: MatchHistoryProps) {
           category: 'sports' as Category,
           date: match.date,
           time: match.time,
-          location: match.turfName || match.location,
-          status: match.status,
-          paymentType: match.paymentOption === 'Direct Payment' ? 'direct' : 'split',
-          amount: match.amount || match.turfCost || 0,
+          location: match.turf_name || match.turfName || match.location,
+          status: match.status || 'upcoming',
+          paymentType: match.payment_option === 'Direct Payment' || match.paymentOption === 'Direct Payment' ? 'direct' : 'split',
+          amount: match.amount || match.turf_cost || match.turfCost || 0,
           sport: match.sport,
-          participants: match.currentPlayers || 1,
-          maxParticipants: match.maxPlayers || 10
+          participants: match.current_players || match.currentPlayers || 1,
+          maxParticipants: match.max_players || match.maxPlayers || 10
         })),
         ...eventsBookings.map((event: any) => ({
           id: event.id,
@@ -87,10 +94,11 @@ export function MatchHistory({ onNavigate, onBack }: MatchHistoryProps) {
       // Sort by date (newest first)
       allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setHistoryItems(allItems);
+      setIsLoading(false);
     };
 
     loadHistory();
-  }, []);
+  }, [userId]);
 
   const filteredItems = historyItems.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -153,9 +161,9 @@ export function MatchHistory({ onNavigate, onBack }: MatchHistoryProps) {
             </button>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                Match History
+                My Matches
               </h1>
-              <p className="text-sm text-slate-400">Track all your bookings and activities</p>
+              <p className="text-sm text-slate-400">Track every match you've played</p>
             </div>
           </div>
           <Trophy className="w-8 h-8 text-emerald-400" />
@@ -242,7 +250,12 @@ export function MatchHistory({ onNavigate, onBack }: MatchHistoryProps) {
 
         {/* History List */}
         <div className="space-y-3">
-          {filteredItems.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-emerald-500 border-t-transparent"></div>
+              <p className="text-slate-400 text-lg mt-4">Loading your matches...</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="text-center py-12">
               <Trophy className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <p className="text-slate-400 text-lg">No matches found</p>

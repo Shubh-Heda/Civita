@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear Cache - Civita App</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      max-width: 500px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    h1 { margin-top: 0; font-size: 2em; }
+    button {
+      background: white;
+      color: #667eea;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    .success {
+      background: #10b981;
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      display: none;
+    }
+    .log {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .log-item {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #10b981;
+      padding-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Clear Cached Data</h1>
+    <p>This will clear all cached user data and force your app to use the NEW fixed UUIDs.</p>
+    
+    <button onclick="clearEverything()">Clear All Cache & Reload</button>
+    <button onclick="window.location.href='http://localhost:3002/'">Go to App (Port 3002)</button>
+    
+    <div class="success" id="success">
+      ✅ Cache cleared successfully! Click "Go to App" above.
+    </div>
+    
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    function addLog(message) {
+      const log = document.getElementById('log');
+      const item = document.createElement('div');
+      item.className = 'log-item';
+      item.textContent = `✓ ${message}`;
+      log.appendChild(item);
+    }
+
+    async function clearEverything() {
+      const log = document.getElementById('log');
+      log.innerHTML = '';
+      
+      // Clear localStorage
+      const localStorageKeys = Object.keys(localStorage);
+      localStorageKeys.forEach(key => {
+        if (key.includes('civita') || key.includes('civta') || key.includes('demo') || key.includes('user')) {
+          localStorage.removeItem(key);
+          addLog(`Removed localStorage: ${key}`);
+        }
+      });
+      
+      // Clear all localStorage (brute force)
+      localStorage.clear();
+      addLog('Cleared all localStorage');
+      
+      // Clear sessionStorage
+      sessionStorage.clear();
+      addLog('Cleared sessionStorage');
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      addLog('Cleared cookies');
+      
+      // Show success
+      document.getElementById('success').style.display = 'block';
+      addLog('All cache cleared! ✨');
+      
+      // Auto-redirect after 2 seconds
+      setTimeout(() => {
+        window.location.href = 'http://localhost:3002/';
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

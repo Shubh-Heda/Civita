@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   users: 'civita_supabase_demo_users',
   events: 'civita_supabase_demo_events',
   matches: 'civita_supabase_demo_matches',
+  matchParticipants: 'civita_supabase_demo_match_participants',
   feedback: 'civita_supabase_demo_feedback',
 };
 
@@ -23,7 +24,7 @@ export const supabaseAuth = {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE: Use localStorage
       const mockUser = {
-        id: `user-${Date.now()}`,
+        id: crypto.randomUUID(), // Generate valid UUID
         email: email,
         user_metadata: {
           full_name: displayName,
@@ -104,10 +105,12 @@ export const supabaseAuth = {
   // Sign in with Google (OAuth)
   signInWithGoogle: async () => {
     if (!SUPABASE_ENABLED) {
-      // DEMO MODE: Create mock Google user
+      // DEMO MODE: Create mock Google user with consistent UUID
+      const DEMO_GOOGLE_UUID = '00000000-0000-0000-0000-000000000002';
+      console.log('🔥 FIXED CODE RUNNING - Google Demo UUID:', DEMO_GOOGLE_UUID);
       const mockUser = {
-        id: `google-${Date.now()}`,
-        email: `demo-google-${Date.now()}@gmail.com`,
+        id: DEMO_GOOGLE_UUID,
+        email: 'demo-google@gmail.com',
         user_metadata: {
           full_name: 'Google Demo User',
           avatar_url: 'https://i.pravatar.cc/150?u=google',
@@ -404,6 +407,60 @@ export const matchesService = {
     }
   },
 
+  // Add or update a match participant
+  addMatchParticipant: async (
+    matchId: string,
+    userId: string,
+    role: 'organizer' | 'player' = 'player',
+    status: 'joined' | 'paid' | 'confirmed' | 'completed' | 'cancelled' = 'joined'
+  ) => {
+    if (!SUPABASE_ENABLED) {
+      const participants = JSON.parse(localStorage.getItem(STORAGE_KEYS.matchParticipants) || '[]');
+      const existingIndex = participants.findIndex(
+        (p: any) => p.match_id === matchId && p.user_id === userId
+      );
+
+      const record = {
+        match_id: matchId,
+        user_id: userId,
+        role,
+        status,
+        joined_at: new Date().toISOString(),
+      };
+
+      if (existingIndex >= 0) {
+        participants[existingIndex] = { ...participants[existingIndex], ...record };
+      } else {
+        participants.push(record);
+      }
+
+      localStorage.setItem(STORAGE_KEYS.matchParticipants, JSON.stringify(participants));
+      return { data: record, error: null };
+    }
+
+    try {
+      const { data, error } = await supabase!
+        .from('match_participants')
+        .upsert(
+          {
+            match_id: matchId,
+            user_id: userId,
+            role,
+            status,
+            joined_at: new Date().toISOString(),
+          },
+          { onConflict: 'match_id,user_id' }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message };
+    }
+  },
+
   // Get matches by sport
   getMatches: async (sport?: string) => {
     if (!SUPABASE_ENABLED) {
@@ -424,6 +481,42 @@ export const matchesService = {
       return data || [];
     } catch (error: any) {
       console.error('Error fetching matches:', error);
+      return [];
+    }
+  },
+
+  // Get all matches for a user
+  getUserMatches: async (userId: string, category?: string) => {
+    if (!SUPABASE_ENABLED) {
+      const matches = JSON.parse(localStorage.getItem(STORAGE_KEYS.matches) || '[]');
+      const participants = JSON.parse(localStorage.getItem(STORAGE_KEYS.matchParticipants) || '[]');
+
+      const userMatchIds = new Set(
+        participants.filter((p: any) => p.user_id === userId).map((p: any) => p.match_id)
+      );
+
+      const userMatches = matches.filter((m: any) => userMatchIds.has(m.id));
+      return category ? userMatches.filter((m: any) => m.category === category) : userMatches;
+    }
+
+    try {
+      const { data, error } = await supabase!
+        .from('match_participants')
+        .select('status, role, joined_at, matches(*)')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const rows = (data || []).map((row: any) => ({
+        ...(row.matches || {}),
+        participant_status: row.status,
+        participant_role: row.role,
+        participant_joined_at: row.joined_at,
+      }));
+
+      return category ? rows.filter((m: any) => m.category === category) : rows;
+    } catch (error) {
+      console.error('Error fetching user matches:', error);
       return [];
     }
   },

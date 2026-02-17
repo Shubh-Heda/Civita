@@ -177,16 +177,24 @@ class ModerChatService {
           updated_at: new Date().toISOString(),
         });
 
-      if (convError) throw convError;
+      if (convError) {
+        console.error('❌ Conversation insert error:', JSON.stringify(convError, null, 2));
+        throw convError;
+      }
 
       // Add creator as admin
-      await supabase.from('conversation_members').insert({
+      const { error: creatorError } = await supabase.from('conversation_members').insert({
         conversation_id: conversationId,
         user_id: creatorId,
         name: creatorName,
         role: 'admin',
         joined_at: new Date().toISOString(),
       });
+
+      if (creatorError) {
+        console.error('❌ Creator member insert error:', JSON.stringify(creatorError, null, 2));
+        throw creatorError;
+      }
 
       // Add other members
       if (memberIds.length > 0) {
@@ -198,12 +206,17 @@ class ModerChatService {
           joined_at: new Date().toISOString(),
         }));
 
-        await supabase.from('conversation_members').insert(memberData);
+        const { error: membersError } = await supabase.from('conversation_members').insert(memberData);
+        if (membersError) {
+          console.error('❌ Members insert error:', JSON.stringify(membersError, null, 2));
+          throw membersError;
+        }
       }
 
       return await this.getConversation(conversationId);
     } catch (error) {
       console.error('❌ Error creating group conversation:', error);
+      console.error('Full error details:', JSON.stringify(error, null, 2));
       throw error;
     }
   }
@@ -219,14 +232,20 @@ class ModerChatService {
         .eq('id', conversationId)
         .single();
 
-      if (convError) throw convError;
+      if (convError) {
+        console.error('❌ Get conversation error:', JSON.stringify(convError, null, 2));
+        throw convError;
+      }
 
       const { data: members, error: membersError } = await supabase
         .from('conversation_members')
         .select('*')
         .eq('conversation_id', conversationId);
 
-      if (membersError) throw membersError;
+      if (membersError) {
+        console.error('❌ Get members error:', JSON.stringify(membersError, null, 2));
+        throw membersError;
+      }
 
       const { data: lastMsg, error: msgError } = await supabase
         .from('messages')
@@ -236,7 +255,10 @@ class ModerChatService {
         .limit(1)
         .single();
 
-      if (msgError && msgError.code !== 'PGRST116') throw msgError; // PGRST116 = no rows
+      if (msgError && msgError.code !== 'PGRST116') {
+        console.error('❌ Get last message error:', JSON.stringify(msgError, null, 2));
+        throw msgError;
+      }
 
       return {
         id: conv.id,
@@ -255,6 +277,7 @@ class ModerChatService {
       };
     } catch (error) {
       console.error('❌ Error getting conversation:', error);
+      console.error('Full error details:', JSON.stringify(error, null, 2));
       throw error;
     }
   }
@@ -325,6 +348,7 @@ class ModerChatService {
       return convs;
     } catch (error) {
       console.error('❌ Error getting user conversations:', error);
+      console.error('Full error details:', JSON.stringify(error, null, 2));
       return [];
     }
   }
@@ -343,7 +367,7 @@ class ModerChatService {
     try {
       const messageId = crypto.randomUUID();
 
-      const { error } = await supabase.from('messages').insert({
+      const { data, error } = await supabase.from('messages').insert({
         id: messageId,
         conversation_id: conversationId,
         sender_id: senderId,
@@ -353,9 +377,12 @@ class ModerChatService {
         message_type: messageType,
         is_sent: true,
         created_at: new Date().toISOString(),
-      });
+      }).select().single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase error details:', error);
+        throw error;
+      }
 
       // Update conversation updated_at
       await supabase
@@ -377,6 +404,7 @@ class ModerChatService {
       };
     } catch (error) {
       console.error('❌ Error sending message:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       throw error;
     }
   }

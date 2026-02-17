@@ -187,8 +187,8 @@ function AppContent() {
               setEventsProfile(formattedProfile);
             }
             
-            // Load matches from backend
-            const sportsMatchesData = await matchService.getMatches('sports');
+            // Load matches from backend (user-specific)
+            const sportsMatchesData = await matchService.getUserMatches(user.id, 'sports');
             if (sportsMatchesData.length > 0) {
               setSportsMatches(sportsMatchesData.map(m => ({
                 id: m.id,
@@ -641,13 +641,16 @@ function AppContent() {
           throw new Error(matchError);
         }
 
-        const totalCost = match.amount ?? match.turfCost ?? 0;
+        const persistedMatchId = createdMatch?.id || match.id;
+
+        await matchService.addMatchParticipant(persistedMatchId, user.id, 'organizer', 'joined');
         
         // Only create group chat for split payment matches
         if (!isDirectPayment) {
           // Create modern chat conversation for match
+          let createdConversationId: string | undefined;
           try {
-            const matchId = createdMatch?.id || match.id;
+            const matchId = persistedMatchId;
             const conversation = await modernChatService.createGroupConversation(
               match.title,
               `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
@@ -655,12 +658,13 @@ function AppContent() {
               user.name || user.email || 'Organizer',
               [] // Members can join via match discovery
             );
+            createdConversationId = conversation.id;
             
             // Update discovery hub with conversation ID
             const matchWithChat = { ...match, groupChatId: conversation.id };
             matchNotificationService.saveMatchToDiscoverable(matchWithChat);
             
-            navigateTo('modern-chat');
+            navigateTo('modern-chat', undefined, undefined, undefined, conversation.id);
             console.log('✅ Modern chat conversation created for match:', conversation.id);
             
             // Send welcome message to conversation
@@ -673,8 +677,9 @@ function AppContent() {
             );
           } catch (chatError) {
             console.error('Note: Modern chat creation failed:', chatError);
-            // Still navigate to modern chat even if creation fails
-            navigateTo('modern-chat');
+            console.error('Full chat error details:', JSON.stringify(chatError, null, 2));
+            // Still navigate to modern chat even if creation fails  
+            navigateTo('modern-chat', undefined, undefined, undefined, createdConversationId);
           }
           
           toast.success('Match Created Successfully! 🎉', {
@@ -745,10 +750,11 @@ function AppContent() {
         const existingMatch = await matchService.getMatches('sports');
         
         const matchExists = existingMatch.find(m => m.id === match.id);
+        let persistedMatchId = match.id;
         
         if (!matchExists) {
           // Create the match if it doesn't exist
-          const { error: createError } = await matchService.addMatch({
+          const { data: createdMatch, error: createError } = await matchService.addMatch({
             user_id: user.id,
             title: match.title,
             turf_name: match.turfName,
@@ -771,15 +777,20 @@ function AppContent() {
           if (createError) {
             throw new Error(createError);
           }
+
+          if (createdMatch?.id) {
+            persistedMatchId = createdMatch.id;
+          }
         }
 
-        const totalCost = match.amount ?? match.turfCost ?? 0;
+        await matchService.addMatchParticipant(persistedMatchId, user.id, 'player', 'joined');
+
         // ALWAYS get or create group chat for match, regardless of cost
         try {
-          let groupChat = await realGroupChatService.getGroupChatByMatchId(match.id);
+          let groupChat = await realGroupChatService.getGroupChatByMatchId(persistedMatchId);
           if (!groupChat) {
             groupChat = await realGroupChatService.createGroupChat(
-              match.id,
+              persistedMatchId,
               match.title,
               `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
               user.id,
@@ -1178,7 +1189,7 @@ function AppContent() {
         {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onBack={goBack} onMatchCreate={handleMatchCreate} />}
         {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onBack={goBack} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
         {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} onBack={goBack} turfId={selectedTurfId} />}
-        {currentPage === 'match-history' && <MatchHistory onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'match-history' && <MatchHistory onNavigate={navigateTo} onBack={goBack} userId={user?.id} />}
         {(currentPage === 'chat' || currentPage === 'sports-chat' || currentPage === 'events-chat' || currentPage === 'group-chat' || currentPage === 'dm-chat' || currentPage === 'modern-chat') && (
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading chat...</div>}>
             <ModernChat 

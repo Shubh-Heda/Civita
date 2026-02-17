@@ -6,7 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 export const supabaseEnabled = Boolean(supabaseUrl && supabaseAnonKey);
 
 if (!supabaseEnabled) {
-  console.warn('VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is not set. Supabase client disabled; upload functions will run in demo/fallback mode.');
+  console.warn('VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is not set. Using demo mode.');
 }
 
 export const supabase = supabaseEnabled ? createClient(supabaseUrl!, supabaseAnonKey!) : null;

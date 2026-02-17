@@ -26,9 +26,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const isProduction = import.meta.env.PROD;
 
   useEffect(() => {
-    // Listen for Supabase auth changes
+    // On localhost: Clear session on mount (force re-auth)
+    if (!isProduction) {
+      localStorage.removeItem('civita_current_user');
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    // On production: Listen for Supabase auth changes
     const unsubscribe = supabaseAuth.onAuthStateChanged((authUser) => {
       if (authUser) {
         const user: User = {
@@ -50,20 +59,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [isProduction]);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Handle demo account
-      if (email === 'demo@civita.com' && password === 'demo123') {
+      // Demo account only on localhost
+      if (!import.meta.env.PROD && email === 'demo@civita.com' && password === 'demo123') {
+        // Use consistent UUID for demo user across sessions
+        const DEMO_USER_UUID = '00000000-0000-0000-0000-000000000001';
+        console.log('🔥 FIXED CODE RUNNING - Demo User UUID:', DEMO_USER_UUID);
         const user: User = {
-          id: 'demo_user',
+          id: DEMO_USER_UUID,
           email: email,
-          name: 'Shubh Heda',
-          age: '25',
-          phone: '+91-9876543210',
-          profession: 'Product Manager',
+          name: 'Demo User',
           onboarding_completed: true,
         };
         setUser(user);
@@ -71,13 +80,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { data: { user }, error: null };
       }
 
-      // Use Supabase sign in
+      // Use Supabase auth
       const result = await supabaseAuth.signIn(email, password);
       if (result && result.user) {
         const user: User = {
           id: result.user.id,
           email: result.user.email || '',
           name: result.user.user_metadata?.full_name || email.split('@')[0],
+          age: result.user.user_metadata?.age,
+          phone: result.user.user_metadata?.phone,
+          profession: result.user.user_metadata?.profession,
+          onboarding_completed: result.user.user_metadata?.onboarding_completed || false,
         };
         setUser(user);
         setLoading(false);
@@ -100,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: result.user.id,
           email: result.user.email || '',
           name: userData.name,
+          onboarding_completed: false, // New signup - show onboarding form
         };
         setUser(user);
         setLoading(false);
