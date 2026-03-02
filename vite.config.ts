@@ -11,9 +11,9 @@ export default defineConfig(({ command }) => {
   if (process.env.VERCEL_ENV === 'production') {
     base = '/';
   }
-  // Otherwise assume GitHub Pages with repo name 'Avento'
+  // Otherwise assume GitHub Pages with repo name 'Civita'
   else if (!process.env.VERCEL_ENV && process.env.NODE_ENV === 'production') {
-    base = '/Avento/';
+    base = '/Civita/';
   }
   
   return ({
