@@ -3,9 +3,21 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import compression from 'vite-plugin-compression';
 
-export default defineConfig(({ command }) => ({
-  base: process.env.VERCEL_ENV === 'production' ? '/' : 
-        process.env.GITHUB_PAGES === 'true' ? '/Avento/' : '/',
+export default defineConfig(({ command }) => {
+  // Determine base path based on deployment environment
+  let base = '/';
+  
+  // If deploying to Vercel production
+  if (process.env.VERCEL_ENV === 'production') {
+    base = '/';
+  }
+  // Otherwise assume GitHub Pages with repo name 'Avento'
+  else if (!process.env.VERCEL_ENV && process.env.NODE_ENV === 'production') {
+    base = '/Avento/';
+  }
+  
+  return ({
+  base,
   
   // Ensure environment variables are properly exposed
   define: {
@@ -127,4 +139,5 @@ export default defineConfig(({ command }) => ({
     port: 3000,
     open: true,
   },
-}));
+  });
+});
