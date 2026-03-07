@@ -29,7 +29,7 @@ const CreateEventBooking = lazy(() => import('./components/CreateEventBooking').
 const TurfDetail = lazy(() => import('./components/TurfDetail').then(m => ({ default: m.TurfDetail })));
 const WhatsAppChat = lazy(() => import('./components/WhatsAppChat').then(m => ({ default: m.WhatsAppChat })));
 const GroupChatRoom = lazy(() => import('./components/chat/GroupChatRoom').then(m => ({ default: m.GroupChatRoom })));
-const GroupChatComponent = lazy(() => import('./components/GroupChatComponent').then(m => ({ default: m.GroupChatComponent })));
+const GroupChatComponent = lazy(() => import('./components/GroupChatComponent'));
 const DirectMessageThread = lazy(() => import('./components/chat/DirectMessageThread').then(m => ({ default: m.DirectMessageThread })));
 const HelpSupport = lazy(() => import('./components/HelpSupport').then(m => ({ default: m.HelpSupport })));
 const RealTimeAvailability = lazy(() => import('./components/RealTimeAvailability').then(m => ({ default: m.RealTimeAvailability })));
@@ -43,10 +43,6 @@ const HighlightReels = lazy(() => import('./components/HighlightReels').then(m =
 const ModernChat = lazy(() => import('./components/ModernChat').then(m => ({ default: m.ModernChat })));
 const MatchHistory = lazy(() => import('./components/MatchHistory').then(m => ({ default: m.MatchHistory })));
 import { apiService } from './services/apiService';
-import { friendshipService } from './services/friendshipService';
-import { gratitudeService } from './services/gratitudeService';
-import { postMatchService } from './services/postMatchService';
-import { achievementService } from './services/achievementService';
 import { profileService, matchService, initializeDefaultData } from './services/backendService';
 import { realGroupChatService } from './services/groupChatServiceReal';
 import { modernChatService } from './services/modernChatService';
@@ -84,10 +80,19 @@ interface Match {
   turfCost?: number;
 }
 
-function AppContent() {
+// Wrapper component that uses useAuth - must be inside AuthProvider
+function AppContainer() {
   const { user, loading } = useAuth();
+  return <AppContent user={user} loading={loading} />;
+}
+
+interface AppContentProps {
+  user: any;
+  loading: boolean;
+}
+
+function AppContent({ user, loading }: AppContentProps) {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
-  const [navigationHistory, setNavigationHistory] = useState<Page[]>(['landing']);
   const [selectedTurfId, setSelectedTurfId] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [selectedGroupChatId, setSelectedGroupChatId] = useState<string | null>(null);
@@ -95,10 +100,10 @@ function AppContent() {
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [showLocationRequest, setShowLocationRequest] = useState(false);
   const [chatGroups, setChatGroups] = useState<{[key: string]: string}>({});
-  const [currentCategory, setCurrentCategory] = useState<'sports' | 'events' | 'gaming' | 'parties'>('sports');
+  const [currentCategory, setCurrentCategory] = useState<'sports' | 'events'>('sports');
   const [selectedEventDetails, setSelectedEventDetails] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [pendingCategory, setPendingCategory] = useState<'sports' | 'events' | 'gaming' | 'parties' | null>(null);
+  const [pendingCategory, setPendingCategory] = useState<'sports' | 'events' | 'gaming' | null>(null);
   const inviteHandledRef = useRef(false);
   
   // Separate user profiles for each category
@@ -165,6 +170,16 @@ function AppContent() {
   useEffect(() => {
     const initBackend = async () => {
       try {
+        // Clear legacy local mock-chat caches so UI relies on backend conversations.
+        [
+          'civta_group_chats',
+          'civita_group_chats',
+          'local_group_chats',
+          'local_chat_members',
+          'local_chat_messages',
+          'local_chat_invites'
+        ].forEach((key) => localStorage.removeItem(key));
+
         await apiService.initialize();
         
         // Initialize Supabase backend with default data if user is logged in
@@ -238,29 +253,7 @@ function AppContent() {
           }
         }
         
-        // Initialize friendship mock data
-        if (!localStorage.getItem('civita_friendships')) {
-          friendshipService.initializeMockFriendships();
-          console.log('✅ Friendship mock data initialized');
-        }
-        
-        // Initialize gratitude mock data
-        if (!localStorage.getItem('civita_gratitude')) {
-          gratitudeService.initializeMockGratitude();
-          console.log('✅ Gratitude mock data initialized');
-        }
-        
-        // Initialize post-match mock data
-        if (!localStorage.getItem('civita_post_match_memories')) {
-          postMatchService.initializeMockData();
-          console.log('✅ Post-match mock data initialized');
-        }
-        
-        // Initialize achievement & gamification mock data
-        if (!localStorage.getItem('civta_achievements')) {
-          achievementService.initializeMockData('user_001');
-          console.log('✅ Achievement mock data initialized');
-        }
+        // Backend-first mode: do not auto-initialize mock seed data.
         
         // Check if there's stored location
         const storedLocation = localStorage.getItem('userLocation');
@@ -521,7 +514,7 @@ function AppContent() {
       try {
         const { data: existingProfile } = await profileService.getUserProfile(user.id);
         if (existingProfile) {
-          await profileService.updateProfile(existingProfile.id, {
+          await profileService.updateUserProfile(user.id, {
             name: updatedProfile.name,
             bio: updatedProfile.bio,
             interests: updatedProfile.interests,
@@ -532,9 +525,7 @@ function AppContent() {
           });
         } else {
           // Create new profile if doesn't exist
-          await profileService.createProfile({
-            id: user.id,
-            user_id: user.id,
+          await profileService.updateUserProfile(user.id, {
             name: updatedProfile.name,
             bio: updatedProfile.bio,
             interests: updatedProfile.interests,
@@ -565,7 +556,7 @@ function AppContent() {
       try {
         const { data: existingProfile } = await profileService.getUserProfile(user.id);
         if (existingProfile) {
-          await profileService.updateProfile(existingProfile.id, {
+          await profileService.updateUserProfile(user.id, {
             name: updatedProfile.name,
             bio: updatedProfile.bio,
             interests: updatedProfile.interests,
@@ -575,9 +566,7 @@ function AppContent() {
             description: 'Your changes have been saved!',
           });
         } else {
-          await profileService.createProfile({
-            id: user.id,
-            user_id: user.id,
+          await profileService.updateUserProfile(user.id, {
             name: updatedProfile.name,
             bio: updatedProfile.bio,
             interests: updatedProfile.interests,
@@ -627,7 +616,6 @@ function AppContent() {
           status: match.status,
           visibility: match.visibility,
           payment_option: match.paymentOption,
-          amount: match.amount,
           location: match.location,
           lat: match.lat,
           lng: match.lng,
@@ -645,91 +633,75 @@ function AppContent() {
 
         await matchService.addMatchParticipant(persistedMatchId, user.id, 'organizer', 'joined');
         
-        // Only create group chat for split payment matches
-        if (!isDirectPayment) {
-          // Create modern chat conversation for match
-          let createdConversationId: string | undefined;
-          try {
-            const matchId = persistedMatchId;
-            const conversation = await modernChatService.createGroupConversation(
-              match.title,
-              `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
-              user.id,
-              user.name || user.email || 'Organizer',
-              [] // Members can join via match discovery
-            );
-            createdConversationId = conversation.id;
-            
-            // Update discovery hub with conversation ID
-            const matchWithChat = { ...match, groupChatId: conversation.id };
-            matchNotificationService.saveMatchToDiscoverable(matchWithChat);
-            
-            navigateTo('modern-chat', undefined, undefined, undefined, conversation.id);
-            console.log('✅ Modern chat conversation created for match:', conversation.id);
-            
-            // Send welcome message to conversation
-            await modernChatService.sendMessage(
-              conversation.id,
-              user.id,
-              user.name || user.email || 'Organizer',
-              `🎉 Match created! ${match.sport} at ${match.turfName} on ${match.date} at ${match.time}\n\nMinimum players: ${match.minPlayers}\nMaximum players: ${match.maxPlayers}\n\nJoin and let's play!`,
-              'text'
-            );
-          } catch (chatError) {
-            console.error('Note: Modern chat creation failed:', chatError);
-            console.error('Full chat error details:', JSON.stringify(chatError, null, 2));
-            // Still navigate to modern chat even if creation fails  
-            navigateTo('modern-chat', undefined, undefined, undefined, createdConversationId);
-          }
+        // Always create group chat for ALL matches for coordination and community
+        try {
+          const matchId = persistedMatchId;
+          const conversation = await modernChatService.createGroupConversation(
+            match.title,
+            `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
+            user.id,
+            user.name || user.email || 'Organizer',
+            [] // Members can join via match discovery
+          );
+          
+          // Update discovery hub with conversation ID
+          const matchWithChat = { 
+            matchId: persistedMatchId,
+            title: match.title,
+            organizer: user.name || user.email || 'Organizer',
+            sport: match.sport,
+            turfName: match.turfName,
+            location: match.location || 'Location TBA',
+            date: match.date,
+            time: match.time,
+            minPlayers: match.minPlayers || 2,
+            currentPlayers: 1,
+            visibility: match.visibility as 'community' | 'nearby' | 'private',
+            groupChatId: conversation.id 
+          };
+          matchNotificationService.saveMatchToDiscoverable(matchWithChat);
+          
+          navigateTo('modern-chat', undefined, undefined, undefined, conversation.id);
+          console.log('✅ Modern chat conversation created for match:', conversation.id);
+          
+          // Send welcome message to conversation with appropriate payment info
+          const paymentInfo = isDirectPayment 
+            ? '\n\n💳 Payment: Direct payment confirmed!'
+            : `\n\n💰 Payment: Split costs after minimum ${match.minPlayers} players join`;
+          
+          await modernChatService.sendMessage(
+            conversation.id,
+            user.id,
+            user.name || user.email || 'Organizer',
+            `🎉 Match created! ${match.sport} at ${match.turfName} on ${match.date} at ${match.time}\n\nMinimum players: ${match.minPlayers}\nMaximum players: ${match.maxPlayers}${paymentInfo}\n\nJoin and let's play!`,
+            'text'
+          );
           
           toast.success('Match Created Successfully! 🎉', {
-            description: 'Chat conversation created - opening now!',
+            description: 'Group chat created - opening now!',
           });
-        } else {
-          // Direct payment - no group chat needed
-          // Show match booking confirmation with reminder
+        } catch (chatError) {
+          console.error('Note: Modern chat creation failed:', chatError);
+          // Still provide good UX even if chat fails
           navigateTo('match-history');
-          toast.success('🎾 Match Booked Successfully!', {
-            description: `${match.sport} at ${match.turfName} on ${match.date} at ${match.time}. Payment confirmed - see you there!`,
-            duration: 6000,
+          toast.info('Match Created! 🎉', {
+            description: 'Group chat will be available soon!',
           });
-          
-          // Show reminder notification
-          setTimeout(() => {
-            toast.info('📅 Match Reminder', {
-              description: `Don't forget: ${match.sport} match at ${match.turfName} - ${match.date} at ${match.time}`,
-              duration: 5000,
-            });
-          }, 2000);
         }
         
         console.log('✅ Match saved to backend:', match.title);
       } catch (error) {
         console.error('❌ Error saving match to backend:', error);
-        // Navigate appropriately based on payment type
-        if (isDirectPayment) {
-          navigateTo('match-history');
-          toast.success('Match Booked! 🎉', {
-            description: `${match.sport} at ${match.turfName} on ${match.date}. See you there!`,
-          });
-        } else {
-          navigateTo('modern-chat');
-          toast.info('Match Created! 🎉', {
-            description: 'Chat ready - opening now!',
-          });
-        }
+        navigateTo('match-history');
+        toast.error('Match save failed', {
+          description: 'Backend rejected the match. Please check schema setup and try again.',
+        });
       }
     } else {
       // User not logged in
-      if (isDirectPayment) {
-        toast.info('Match Booked! 🎉', {
-          description: 'Sign in to save your booking to history!',
-        });
-      } else {
-        toast.info('Match Created! 🎉', {
-          description: 'Sign in to create group chat!',
-        });
-      }
+      toast.info('Match Created! 🎉', {
+        description: 'Sign in to save to backend and create group chat!',
+      });
     }
   };
 
@@ -764,7 +736,6 @@ function AppContent() {
             status: match.status,
             visibility: match.visibility,
             payment_option: match.paymentOption,
-            amount: match.amount,
             location: match.location,
             lat: match.lat,
             lng: match.lng,
@@ -792,40 +763,27 @@ function AppContent() {
             groupChat = await realGroupChatService.createGroupChat(
               persistedMatchId,
               match.title,
-              `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
+              match.sport || 'Match',
               user.id,
-              user.name || user.email || 'Organizer',
-              user.email || 'organizer@example.com'
-            );
-          } else {
-            // Add user as member
-            await realGroupChatService.addMember(
-              groupChat.id,
-              user.id,
-              'member',
-              user.name || user.email || 'Player',
-              user.email || 'player@example.com'
+              user.name,
+              user.email
             );
           }
-
-          setSelectedGroupChatId(groupChat.id);
           navigateTo('modern-chat');
-          console.log('✅ Group chat for match ready:', groupChat.id);
+          toast.info('Joined Locally! 📱', {
+            description: 'Chat ready to use!',
+          });
         } catch (chatError) {
-          console.error('Note: Group chat access failed:', chatError);
-          // Navigate to modern chat page anyway
-          navigateTo('modern-chat');
+          console.error('Chat error:', chatError);
         }
-        
-        toast.success('Joined Match! ⚽', {
-          description: 'Chat opened - let\'s play!',
+
+        toast.success('Match Joined! ⚽', {
+          description: 'You\'ve joined the match!',
         });
       } catch (error) {
-        console.error('❌ Error joining match:', error);
-        // Still try to navigate to modern chat
-        navigateTo('modern-chat');
-        toast.info('Joined Locally! 📱', {
-          description: 'Chat ready to use!',
+        console.error('Error joining match:', error);
+        toast.error('Failed to join match', {
+          description: 'Please try again',
         });
       }
     } else {
@@ -860,7 +818,6 @@ function AppContent() {
           status: 'upcoming',
           visibility: event.visibility || 'community',
           payment_option: event.paymentOption || 'Pay Directly',
-          amount: event.amount || event.ticketPrice,
           location: event.location,
           lat: event.lat,
           lng: event.lng,
@@ -913,10 +870,6 @@ function AppContent() {
       // Clear any pending state when going back to landing
       setPendingCategory(null);
       setCurrentPage(page);
-      // Add to navigation history
-      setNavigationHistory(prev => [...prev, page]);
-      // Update browser history
-      window.history.pushState({ page }, '', `#${page}`);
       return;
     }
     
@@ -929,6 +882,7 @@ function AppContent() {
     } else if (page === 'gaming-hub' || page === 'gaming-profile' || page === 'gaming-community' || page === 'gaming-chat' || page === 'gaming-map' || page === 'gaming-events' || page === 'gaming-photos' || page === 'gaming-highlights' || page === 'gaming-memories') {
       setCurrentCategory('gaming');
     }
+    // For 'comprehensive-dashboard', 'availability', 'help', 'chat', 'group-chat', 'dm-chat', etc., keep the current category
     
     // Show notification when navigating to community if there are upcoming matches
     if (page === 'community' && sportsMatches.filter(m => m.status === 'upcoming').length > 0) {
@@ -939,48 +893,7 @@ function AppContent() {
     }
     
     setCurrentPage(page);
-    // Add to navigation history
-    setNavigationHistory(prev => [...prev, page]);
-    // Update browser history
-    window.history.pushState({ page }, '', `#${page}`);
   };
-
-  // Go back to previous page
-  const goBack = () => {
-    if (navigationHistory.length > 1) {
-      // Remove current page from history
-      const newHistory = [...navigationHistory];
-      newHistory.pop();
-      const previousPage = newHistory[newHistory.length - 1];
-      
-      setNavigationHistory(newHistory);
-      setCurrentPage(previousPage);
-      
-      // Update browser history
-      window.history.back();
-    } else {
-      // If no history, go to landing
-      navigateTo('landing');
-    }
-  };
-
-  // Handle browser back/forward buttons
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state && event.state.page) {
-        setCurrentPage(event.state.page);
-        // Update navigation history to match
-        setNavigationHistory(prev => {
-          const newHistory = [...prev];
-          newHistory.pop();
-          return newHistory;
-        });
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   useEffect(() => {
     if (!user || inviteHandledRef.current) {
@@ -1049,6 +962,8 @@ function AppContent() {
             navigateTo('gaming-hub');
           } else if (pendingCategory === 'events') {
             navigateTo('events-dashboard');
+          } else if (pendingCategory === 'parties') {
+            navigateTo('party-dashboard');
           } else {
             navigateTo('dashboard');
           }
@@ -1160,52 +1075,82 @@ function AppContent() {
           </div>
         </div>
       }>
-        {currentPage === 'dashboard' && <Dashboard onNavigate={navigateTo} onBack={goBack} userProfile={sportsProfile} matches={sportsMatches} />}
-        {currentPage === 'events-dashboard' && <EventsDashboard onNavigate={navigateTo} onBack={goBack} userProfile={eventsProfile} onBookEvent={handleBookEvent} />}
-        {currentPage === 'gaming-hub' && <GamingHub onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'gaming-profile' && <GamingProfilePage onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'gaming-community' && <GamingCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'gaming-chat' && <GroupChatGaming onNavigate={navigateTo} onBack={goBack} matchId={selectedMatchId} />}
-        {currentPage === 'gaming-map' && <GamingMapView onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'sports-events' && <CommunityEvents category="sports" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'events-events' && <CommunityEvents category="events" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'sports-photos' && <PhotoAlbum category="sports" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'events-photos' && <PhotoAlbum category="events" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'gaming-photos' && <PhotoAlbum category="gaming" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'sports-highlights' && <HighlightReels category="sports" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'events-highlights' && <HighlightReels category="events" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'gaming-highlights' && <HighlightReels category="gaming" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'sports-memories' && <MemoryTimeline category="sports" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'events-memories' && <MemoryTimeline category="events" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'gaming-memories' && <MemoryTimeline category="gaming" onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'profile' && <ProfilePage onNavigate={navigateTo} onBack={goBack} onProfileUpdate={handleSportsProfileUpdate} userProfile={sportsProfile} matches={sportsMatches} />}
-        {currentPage === 'events-profile' && <EventsProfilePage onNavigate={navigateTo} onBack={goBack} onProfileUpdate={handleEventsProfileUpdate} userProfile={eventsProfile} matches={eventsMatches} />}
-        {currentPage === 'community' && <CommunityFeed onNavigate={navigateTo} onBack={goBack} matches={sportsMatches} />}
-        {currentPage === 'sports-community' && <SportsCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'cultural-community' && <CulturalCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'reflection' && <PostMatchReflection onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'finder' && <MatchFinder onNavigate={navigateTo} onBack={goBack} onMatchJoin={handleMatchJoin} />}
-        {currentPage === 'discovery' && <DiscoveryHub onNavigate={navigateTo} onBack={goBack} />}
-        {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onBack={goBack} onMatchCreate={handleMatchCreate} />}
-        {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onBack={goBack} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
-        {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} onBack={goBack} turfId={selectedTurfId} />}
-        {currentPage === 'match-history' && <MatchHistory onNavigate={navigateTo} onBack={goBack} userId={user?.id} />}
-        {(currentPage === 'chat' || currentPage === 'sports-chat' || currentPage === 'events-chat' || currentPage === 'group-chat' || currentPage === 'dm-chat' || currentPage === 'modern-chat') && (
+        {currentPage === 'dashboard' && <Dashboard onNavigate={navigateTo} userProfile={sportsProfile} matches={sportsMatches} />}
+        {currentPage === 'events-dashboard' && <EventsDashboard onNavigate={navigateTo} userProfile={eventsProfile} onBookEvent={handleBookEvent} />}
+        {currentPage === 'gaming-hub' && <GamingHub onNavigate={navigateTo} />}
+        {currentPage === 'gaming-profile' && <GamingProfilePage onNavigate={navigateTo} />}
+        {currentPage === 'gaming-community' && <GamingCommunityFeed onNavigate={navigateTo} />}
+        {currentPage === 'gaming-chat' && <GroupChatGaming onNavigate={navigateTo} matchId={selectedMatchId} />}
+        {currentPage === 'gaming-map' && <GamingMapView onNavigate={navigateTo} />}
+        {currentPage === 'map-view' && <MapView onNavigate={navigateTo} />}
+        {currentPage === 'sports-events' && <CommunityEvents category="sports" onNavigate={navigateTo} />}
+        {currentPage === 'events-events' && <CommunityEvents category="events" onNavigate={navigateTo} />}
+        {currentPage === 'sports-photos' && <PhotoAlbum category="sports" onNavigate={navigateTo} />}
+        {currentPage === 'events-photos' && <PhotoAlbum category="events" onNavigate={navigateTo} />}
+        {currentPage === 'gaming-photos' && <PhotoAlbum category="gaming" onNavigate={navigateTo} />}
+        {currentPage === 'sports-highlights' && <HighlightReels category="sports" onNavigate={navigateTo} />}
+        {currentPage === 'events-highlights' && <HighlightReels category="events" onNavigate={navigateTo} />}
+        {currentPage === 'gaming-highlights' && <HighlightReels category="gaming" onNavigate={navigateTo} />}
+        {currentPage === 'sports-memories' && <MemoryTimeline category="sports" onNavigate={navigateTo} />}
+        {currentPage === 'events-memories' && <MemoryTimeline category="events" onNavigate={navigateTo} />}
+        {currentPage === 'gaming-memories' && <MemoryTimeline category="gaming" onNavigate={navigateTo} />}
+        {currentPage === 'profile' && <ProfilePage onNavigate={navigateTo} onProfileUpdate={handleSportsProfileUpdate} userProfile={sportsProfile} matches={sportsMatches} />}
+        {currentPage === 'events-profile' && <EventsProfilePage onNavigate={navigateTo} onProfileUpdate={handleEventsProfileUpdate} userProfile={eventsProfile} matches={eventsMatches} />}
+        {currentPage === 'community' && <CommunityFeed onNavigate={navigateTo} matches={sportsMatches} />}
+        {currentPage === 'sports-community' && <SportsCommunityFeed onNavigate={navigateTo} />}
+        {currentPage === 'cultural-community' && <CulturalCommunityFeed onNavigate={navigateTo} />}
+        {currentPage === 'reflection' && <PostMatchReflection onNavigate={navigateTo} />}
+        {currentPage === 'finder' && <MatchFinder onNavigate={navigateTo} onMatchJoin={handleMatchJoin} />}
+        {currentPage === 'discovery' && <DiscoveryHub onNavigate={navigateTo} />}
+        {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onMatchCreate={handleMatchCreate} />}
+        {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
+        {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} turfId={selectedTurfId} />}
+        {currentPage === 'chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="sports" />}
+        {currentPage === 'sports-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="sports" />}
+        {currentPage === 'events-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="events" />}
+        {currentPage === 'group-chat' && selectedGroupChatId && (
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading chat...</div>}>
-            <ModernChat 
-              selectedConversationId={selectedConversationId || selectedGroupChatId || undefined} 
-              onClose={goBack} 
+            <GroupChatComponent chatId={selectedGroupChatId} onClose={() => navigateTo('dashboard')} />
+          </Suspense>
+        )}
+        {currentPage === 'dm-chat' && selectedConversationId && (
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading messages...</div>}>
+            <DirectMessageThread conversationId={selectedConversationId} onNavigate={navigateTo} />
+          </Suspense>
+        )}
+        {currentPage === 'modern-chat' && (
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading chat...</div>}>
+            <ModernChat
+              selectedConversationId={selectedConversationId ?? undefined}
+              currentUser={user ? { id: user.id, name: user.name, email: user.email } : undefined}
+              onClose={() => navigateTo('dashboard')}
             />
           </Suspense>
         )}
-        {currentPage === 'help' && <HelpSupport onNavigate={navigateTo} onBack={goBack} category={currentCategory} />}
-        {currentPage === 'availability' && <RealTimeAvailability onNavigate={navigateTo} onBack={goBack} category={currentCategory} />}
+        {currentPage === 'match-history' && (
+          <MatchHistory
+            onNavigate={navigateTo}
+            onBack={() => navigateTo('dashboard')}
+            userId={user?.id}
+          />
+        )}
+        {currentPage === 'help' && <HelpSupport onNavigate={navigateTo} category={currentCategory} />}
+        {currentPage === 'availability' && <RealTimeAvailability onNavigate={navigateTo} category={currentCategory} />}
         {currentPage === 'comprehensive-dashboard' && (
           <ThemeProvider userId="user_001">
             <ComprehensiveDashboard 
               userId="user_001" 
               userName={sportsProfile.name} 
-              onClose={goBack} 
+              onClose={() => {
+                // Navigate back to the appropriate dashboard based on current category
+                if (currentCategory === 'sports') {
+                  navigateTo('dashboard');
+                } else if (currentCategory === 'events') {
+                  navigateTo('events-dashboard');
+                } else if (currentCategory === 'parties') {
+                  navigateTo('party-dashboard');
+                }
+              }} 
             />
           </ThemeProvider>
         )}
@@ -1218,7 +1163,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AppContent />
+        <AppContainer />
       </AuthProvider>
     </ErrorBoundary>
   );

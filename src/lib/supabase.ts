@@ -1,12 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import { publicAnonKey } from '../utils/supabase/info';
-
-// For Vercel deployment: Use environment variables exclusively
-// VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in Vercel Environment Variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'https://kouywbotopkrgxyjqylb.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? publicAnonKey;
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Re-export from supabaseClient to avoid creating duplicate client instances
+export { supabase, supabaseEnabled, uploadImage } from './supabaseClient';
 
 // Database types
 export interface Profile {

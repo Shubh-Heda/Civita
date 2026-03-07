@@ -64,9 +64,9 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const user = firebaseAuth.getCurrentUser();
+        const user = await firebaseAuth.getCurrentUser();
         if (user) {
-          const userProfile = await usersService.getUserProfile(user.id);
+          const { data: userProfile } = await usersService.getUserProfile(user.id);
           setCurrentUser({
             id: user.id,
             name: user.displayName || 'You',
@@ -88,7 +88,7 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
     const loadConversations = async () => {
       try {
         setLoading(true);
-        const user = firebaseAuth.getCurrentUser();
+        const user = await firebaseAuth.getCurrentUser();
         if (!user) return;
 
         // Load 1-1 conversations with real user data
@@ -185,7 +185,7 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
 
     const loadMessages = async () => {
       try {
-        const user = firebaseAuth.getCurrentUser();
+        const user = await firebaseAuth.getCurrentUser();
         if (!user) return;
 
         if (selectedChat.type === 'direct') {

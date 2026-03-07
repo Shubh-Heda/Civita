@@ -9,7 +9,7 @@ interface MatchHistoryProps {
   userId?: string;
 }
 
-type Category = 'sports' | 'events' | 'gaming';
+type Category = 'sports';
 type FilterType = 'all' | 'upcoming' | 'completed' | 'cancelled';
 
 interface HistoryItem {
@@ -25,11 +25,9 @@ interface HistoryItem {
   participants?: number;
   maxParticipants?: number;
   sport?: string;
-  eventType?: string;
-  gameType?: string;
 }
 
-export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) {
+export function MatchHistory({ onNavigate: _onNavigate, onBack, userId }: MatchHistoryProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,64 +35,50 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load history from localStorage
     const loadHistory = async () => {
-      setIsLoading(true);
-      const eventsBookings = JSON.parse(localStorage.getItem('eventsBookings') || '[]');
-      const gamingMatches = JSON.parse(localStorage.getItem('gamingMatches') || '[]');
+      try {
+        setIsLoading(true);
 
-      const sportsMatches = userId
-        ? await matchService.getUserMatches(userId, 'sports')
-        : JSON.parse(localStorage.getItem('sportsMatches') || '[]');
+        if (!userId) {
+          setHistoryItems([]);
+          return;
+        }
 
-      const allItems: HistoryItem[] = [
-        ...sportsMatches.map((match: any) => ({
+        const sportsMatches = await matchService.getUserMatches(userId, 'sports');
+
+        // Show only matches planned (organized) by current user.
+        const plannedMatches = (sportsMatches || []).filter((match: any) => {
+          return match.user_id === userId || match.participant_role === 'organizer';
+        });
+
+        // De-duplicate by id to avoid repeated rows from stale participant records.
+        const deduped = Array.from(
+          new Map(plannedMatches.map((match: any) => [match.id, match])).values()
+        );
+
+        const allItems: HistoryItem[] = deduped.map((match: any) => ({
           id: match.id,
           title: match.title,
-          category: 'sports' as Category,
+          category: 'sports',
           date: match.date,
           time: match.time,
-          location: match.turf_name || match.turfName || match.location,
+          location: match.turf_name || match.turfName || match.location || 'Location TBD',
           status: match.status || 'upcoming',
           paymentType: match.payment_option === 'Direct Payment' || match.paymentOption === 'Direct Payment' ? 'direct' : 'split',
           amount: match.amount || match.turf_cost || match.turfCost || 0,
           sport: match.sport,
           participants: match.current_players || match.currentPlayers || 1,
           maxParticipants: match.max_players || match.maxPlayers || 10
-        })),
-        ...eventsBookings.map((event: any) => ({
-          id: event.id,
-          title: event.title || event.eventName,
-          category: 'events' as Category,
-          date: event.date,
-          time: event.time,
-          location: event.venue || event.location,
-          status: event.status || 'upcoming',
-          paymentType: event.paymentOption === 'Direct Payment' ? 'direct' : 'split',
-          amount: event.amount || event.ticketPrice || 0,
-          eventType: event.type,
-          participants: event.attendees || 1
-        })),
-        ...gamingMatches.map((game: any) => ({
-          id: game.id,
-          title: game.title || game.gameName,
-          category: 'gaming' as Category,
-          date: game.date,
-          time: game.time,
-          location: game.venue || game.location,
-          status: game.status || 'upcoming',
-          paymentType: game.paymentOption === 'Direct Payment' ? 'direct' : 'split',
-          amount: game.amount || 0,
-          gameType: game.gameType,
-          participants: game.players || 1,
-          maxParticipants: game.maxPlayers
-        }))
-      ];
+        }));
 
-      // Sort by date (newest first)
-      allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setHistoryItems(allItems);
-      setIsLoading(false);
+        allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setHistoryItems(allItems);
+      } catch (error) {
+        console.error('Failed to load match history:', error);
+        setHistoryItems([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadHistory();
@@ -103,23 +87,14 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
   const filteredItems = historyItems.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     const matchesFilter = selectedFilter === 'all' || item.status === selectedFilter;
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.location.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesCategory && matchesFilter && matchesSearch;
   });
 
-  const getCategoryColor = (category: Category) => {
-    switch (category) {
-      case 'sports':
-        return 'from-emerald-500 to-teal-500';
-      case 'events':
-        return 'from-purple-500 to-pink-500';
-      case 'gaming':
-        return 'from-blue-500 to-cyan-500';
-    }
-  };
+  const getCategoryColor = () => 'from-emerald-500 to-teal-500';
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -149,7 +124,6 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
       <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50">
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -163,7 +137,7 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
               <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 My Matches
               </h1>
-              <p className="text-sm text-slate-400">Track every match you've played</p>
+              <p className="text-sm text-slate-400">Your planned matches (backend)</p>
             </div>
           </div>
           <Trophy className="w-8 h-8 text-emerald-400" />
@@ -171,7 +145,6 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
@@ -183,9 +156,8 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
           />
         </div>
 
-        {/* Category Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {['all', 'sports', 'events', 'gaming'].map((category) => (
+          {['all', 'sports'].map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category as Category | 'all')}
@@ -200,7 +172,6 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
           ))}
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {[
             { value: 'all', label: 'All', icon: Filter },
@@ -223,7 +194,6 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
           ))}
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl p-4">
             <Clock className="w-6 h-6 text-blue-400 mb-2" />
@@ -242,13 +212,12 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
           <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-4">
             <DollarSign className="w-6 h-6 text-purple-400 mb-2" />
             <p className="text-2xl font-bold text-purple-400">
-              ₹{historyItems.reduce((sum, item) => sum + item.amount, 0)}
+              INR {historyItems.reduce((sum, item) => sum + item.amount, 0)}
             </p>
             <p className="text-xs text-slate-400">Total Spent</p>
           </div>
         </div>
 
-        {/* History List */}
         <div className="space-y-3">
           {isLoading ? (
             <div className="text-center py-12">
@@ -260,7 +229,7 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
               <Trophy className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <p className="text-slate-400 text-lg">No matches found</p>
               <p className="text-slate-500 text-sm mt-2">
-                Start booking matches to build your history!
+                Only backend planned matches are shown here.
               </p>
             </div>
           ) : (
@@ -274,7 +243,7 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`h-1 w-1 rounded-full bg-gradient-to-r ${getCategoryColor(item.category)}`} />
+                      <div className={`h-1 w-1 rounded-full bg-gradient-to-r ${getCategoryColor()}`} />
                       <h3 className="font-semibold text-slate-100">{item.title}</h3>
                     </div>
                     <div className="flex flex-wrap gap-2 text-sm text-slate-400">
@@ -304,7 +273,7 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-1 text-slate-400">
                       <DollarSign className="w-4 h-4" />
-                      <span className="font-semibold text-emerald-400">₹{item.amount}</span>
+                      <span className="font-semibold text-emerald-400">INR {item.amount}</span>
                       <span className="text-xs">({item.paymentType === 'direct' ? 'Direct' : 'Split'})</span>
                     </div>
                     {item.participants && (
@@ -314,8 +283,8 @@ export function MatchHistory({ onNavigate, onBack, userId }: MatchHistoryProps) 
                       </div>
                     )}
                   </div>
-                  <div className={`text-xs px-3 py-1 rounded-full bg-gradient-to-r ${getCategoryColor(item.category)} bg-opacity-20 text-white font-medium`}>
-                    {item.sport || item.eventType || item.gameType || item.category}
+                  <div className={`text-xs px-3 py-1 rounded-full bg-gradient-to-r ${getCategoryColor()} bg-opacity-20 text-white font-medium`}>
+                    {item.sport || item.category}
                   </div>
                 </div>
               </motion.div>

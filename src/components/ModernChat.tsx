@@ -16,6 +16,7 @@ import {
   Mic,
   Plus,
   X,
+  ArrowLeft,
   MessageSquarePlus,
   Users,
   Info,
@@ -38,6 +39,11 @@ import './ModernChat.css';
 
 interface ModernChatProps {
   selectedConversationId?: string;
+  currentUser?: {
+    id: string;
+    name?: string;
+    email?: string;
+  };
   onClose?: () => void;
 }
 
@@ -56,7 +62,7 @@ const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '✨'
 // MODERN CHAT COMPONENT
 // ============================================
 
-export const ModernChat: React.FC<ModernChatProps> = ({ selectedConversationId, onClose }) => {
+export const ModernChat: React.FC<ModernChatProps> = ({ selectedConversationId, currentUser: appUser, onClose }) => {
   // State Management
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
@@ -64,6 +70,7 @@ export const ModernChat: React.FC<ModernChatProps> = ({ selectedConversationId, 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [userResolved, setUserResolved] = useState(false);
 
   // UI State
   const [messageInput, setMessageInput] = useState('');
@@ -99,6 +106,16 @@ export const ModernChat: React.FC<ModernChatProps> = ({ selectedConversationId, 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // Prefer authenticated user from App/AuthProvider when available.
+        if (appUser?.id) {
+          setCurrentUser({
+            id: appUser.id,
+            name: appUser.name || appUser.email?.split('@')[0] || 'User',
+            email: appUser.email,
+          });
+          return;
+        }
+
         const user = await supabaseAuth.getCurrentUser();
         if (user) {
           const profileResult = await usersService.getUserProfile(user.id);
@@ -109,14 +126,29 @@ export const ModernChat: React.FC<ModernChatProps> = ({ selectedConversationId, 
             avatar: profileData?.avatar_url || profileData?.avatar,
             email: user.email,
           });
+          return;
+        }
+
+        // Last-resort fallback for local demo sessions.
+        const localUserRaw = localStorage.getItem('civita_current_user') || localStorage.getItem('civta_current_user');
+        if (localUserRaw) {
+          const localUser = JSON.parse(localUserRaw);
+          setCurrentUser({
+            id: localUser.id,
+            name: localUser.name || localUser.user_metadata?.full_name || localUser.email?.split('@')[0] || 'User',
+            email: localUser.email,
+            avatar: localUser.user_metadata?.avatar_url,
+          });
         }
       } catch (error) {
         console.error('Error loading user:', error);
+      } finally {
+        setUserResolved(true);
       }
     };
 
     loadUser();
-  }, []);
+  }, [appUser]);
 
   // ============================================
   // LOAD CONVERSATIONS
@@ -377,10 +409,20 @@ export const ModernChat: React.FC<ModernChatProps> = ({ selectedConversationId, 
     );
   }, [conversations, searchQuery]);
 
-  if (!currentUser) {
+  if (!userResolved) {
     return (
       <div className="modern-chat-loading">
         <div className="spinner">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="modern-chat-loading">
+        <div className="text-center p-6">
+          <p className="text-slate-500">Please sign in to open Messages.</p>
+        </div>
       </div>
     );
   }
@@ -393,7 +435,17 @@ export const ModernChat: React.FC<ModernChatProps> = ({ selectedConversationId, 
       <div className="modern-chat-sidebar">
         {/* Header */}
         <div className="modern-chat-header">
-          <h1 className="modern-chat-title">Messages</h1>
+          <div className="modern-chat-title-row">
+            <button
+              className="icon-btn"
+              onClick={() => onClose?.()}
+              title="Back to dashboard"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h1 className="modern-chat-title">Messages</h1>
+          </div>
           <div className="modern-chat-header-actions">
             <button
               className="icon-btn"

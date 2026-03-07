@@ -29,6 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProduction = import.meta.env.PROD;
 
   useEffect(() => {
+    // Clean up any OAuth error parameters from URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('error') || params.has('error_code') || params.has('error_description')) {
+      console.log('🧹 Cleaning OAuth error from URL');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // On localhost: Clear session on mount (force re-auth)
     if (!isProduction) {
       localStorage.removeItem('civita_current_user');
