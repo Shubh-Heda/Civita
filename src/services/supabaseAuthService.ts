@@ -7,11 +7,14 @@ import { userProfileService } from './userProfileService';
 // Check if Supabase is configured
 const SUPABASE_ENABLED = supabaseEnabled && supabase !== null;
 
+console.log(`🔧 Supabase Mode: ${SUPABASE_ENABLED ? '✅ CONNECTED' : '📱 DEMO (localStorage)'}`);
+
 // Local storage keys for demo mode
 const STORAGE_KEYS = {
   users: 'civita_supabase_demo_users',
   events: 'civita_supabase_demo_events',
   matches: 'civita_supabase_demo_matches',
+  matchParticipants: 'civita_supabase_demo_match_participants',
   feedback: 'civita_supabase_demo_feedback',
 };
 
@@ -23,7 +26,7 @@ export const supabaseAuth = {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE: Use localStorage
       const mockUser = {
-        id: `user-${Date.now()}`,
+        id: crypto.randomUUID(), // Generate valid UUID
         email: email,
         user_metadata: {
           full_name: displayName,
@@ -104,10 +107,12 @@ export const supabaseAuth = {
   // Sign in with Google (OAuth)
   signInWithGoogle: async () => {
     if (!SUPABASE_ENABLED) {
-      // DEMO MODE: Create mock Google user
+      // DEMO MODE: Create mock Google user with consistent UUID
+      const DEMO_GOOGLE_UUID = '00000000-0000-0000-0000-000000000002';
+      console.log('🔥 FIXED CODE RUNNING - Google Demo UUID:', DEMO_GOOGLE_UUID);
       const mockUser = {
-        id: `google-${Date.now()}`,
-        email: `demo-google-${Date.now()}@gmail.com`,
+        id: DEMO_GOOGLE_UUID,
+        email: 'demo-google@gmail.com',
         user_metadata: {
           full_name: 'Google Demo User',
           avatar_url: 'https://i.pravatar.cc/150?u=google',
@@ -392,14 +397,163 @@ export const matchesService = {
     }
 
     try {
-      const { data, error } = await supabase!.from('matches').insert([matchData]).select().single();
+      const payload = { ...matchData };
 
-      if (error) throw error;
+      // Keep compatibility with schemas that only have turf_cost (no amount column).
+      if ((payload.turf_cost === undefined || payload.turf_cost === null) && payload.amount !== undefined) {
+        payload.turf_cost = payload.amount;
+      }
+      delete payload.amount;
 
-      console.log('✅ Match saved to Supabase:', data);
-      return { data, error: null };
+      // Remove undefined fields to avoid schema-cache write errors.
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
+
+      // Provide default values for required GIS fields
+      if (payload.lat === null || payload.lat === undefined) {
+        payload.lat = 28.5355; // Default: Ahmedabad, India latitude
+        console.warn('⚠️ Using default latitude: 28.5355');
+      }
+      if (payload.lng === null || payload.lng === undefined) {
+        payload.lng = 77.3910; // Default: Ahmedabad, India longitude
+        console.warn('⚠️ Using default longitude: 77.3910');
+      }
+
+      // Schema-adaptive insert: if Supabase reports a missing column or constraint, drop it and retry.
+      const mutablePayload: Record<string, any> = { ...payload };
+      let lastError: any = null;
+      const columnsToSkip = new Set<string>();
+
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const { data, error } = await supabase!.from('matches').insert([mutablePayload]).select().single();
+
+        if (!error) {
+          console.log('✅ Match saved to Supabase:', data);
+          return { data, error: null };
+        }
+
+        lastError = error;
+        const message = String(error.message || '');
+
+        // Handle missing column error
+        const missingColumnMatch = message.match(/Could not find the '([^']+)' column/i);
+        const missingColumn = missingColumnMatch?.[1];
+
+        if (missingColumn && missingColumn in mutablePayload && !columnsToSkip.has(missingColumn)) {
+          console.warn(`⚠️ Removing unsupported matches column: ${missingColumn}`);
+          columnsToSkip.add(missingColumn);
+          delete mutablePayload[missingColumn];
+          continue;
+        }
+
+        // Handle NOT-NULL constraint violation (remove the field if it's null)
+        const notNullMatch = message.match(/null value in column "([^"]+)"/i);
+        const notNullColumn = notNullMatch?.[1];
+
+        if (notNullColumn && notNullColumn in mutablePayload && !columnsToSkip.has(notNullColumn)) {
+          console.warn(`⚠️ Removing NULL field that violates NOT-NULL constraint: ${notNullColumn}`);
+          columnsToSkip.add(notNullColumn);
+          delete mutablePayload[notNullColumn];
+          continue;
+        }
+
+        // If we can't handle the error, break
+        break;
+      }
+
+      throw lastError || new Error('Failed to insert match');
     } catch (error: any) {
       console.error('❌ Error saving match:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Add or update a match participant
+  addMatchParticipant: async (
+    matchId: string,
+    userId: string,
+    role: 'organizer' | 'player' = 'player',
+    status: 'joined' | 'paid' | 'confirmed' | 'completed' | 'cancelled' = 'joined'
+  ) => {
+    if (!SUPABASE_ENABLED) {
+      const participants = JSON.parse(localStorage.getItem(STORAGE_KEYS.matchParticipants) || '[]');
+      const existingIndex = participants.findIndex(
+        (p: any) => p.match_id === matchId && p.user_id === userId
+      );
+
+      const record = {
+        match_id: matchId,
+        user_id: userId,
+        role,
+        status,
+        joined_at: new Date().toISOString(),
+      };
+
+      if (existingIndex >= 0) {
+        participants[existingIndex] = { ...participants[existingIndex], ...record };
+      } else {
+        participants.push(record);
+      }
+
+      localStorage.setItem(STORAGE_KEYS.matchParticipants, JSON.stringify(participants));
+      return { data: record, error: null };
+    }
+
+    try {
+      const participantPayload: Record<string, any> = {
+        match_id: matchId,
+        user_id: userId,
+        role,
+        status,
+      };
+
+      let lastError: any = null;
+      const columnsToSkip = new Set<string>();
+
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const { data, error } = await supabase!
+          .from('match_participants')
+          .upsert(participantPayload, { onConflict: 'match_id,user_id' })
+          .select()
+          .single();
+
+        if (!error) {
+          return { data, error: null };
+        }
+
+        lastError = error;
+        const message = String(error.message || '');
+
+        // Handle missing column error
+        const missingColumnMatch = message.match(/Could not find the '([^']+)' column/i);
+        const missingColumn = missingColumnMatch?.[1];
+
+        if (missingColumn && missingColumn in participantPayload && !columnsToSkip.has(missingColumn)) {
+          console.warn(`⚠️ Removing unsupported match_participants column: ${missingColumn}`);
+          columnsToSkip.add(missingColumn);
+          delete participantPayload[missingColumn];
+          continue;
+        }
+
+        // Handle NOT-NULL constraint violation
+        const notNullMatch = message.match(/null value in column "([^"]+)"/i);
+        const notNullColumn = notNullMatch?.[1];
+
+        if (notNullColumn && notNullColumn in participantPayload && !columnsToSkip.has(notNullColumn)) {
+          console.warn(`⚠️ Removing NULL field that violates NOT-NULL constraint: ${notNullColumn}`);
+          columnsToSkip.add(notNullColumn);
+          delete participantPayload[notNullColumn];
+          continue;
+        }
+
+        break;
+      }
+
+      throw lastError || new Error('Failed to upsert match participant');
+    } catch (error: any) {
       return { data: null, error: error.message };
     }
   },
@@ -424,6 +578,42 @@ export const matchesService = {
       return data || [];
     } catch (error: any) {
       console.error('Error fetching matches:', error);
+      return [];
+    }
+  },
+
+  // Get all matches for a user
+  getUserMatches: async (userId: string, category?: string) => {
+    if (!SUPABASE_ENABLED) {
+      const matches = JSON.parse(localStorage.getItem(STORAGE_KEYS.matches) || '[]');
+      const participants = JSON.parse(localStorage.getItem(STORAGE_KEYS.matchParticipants) || '[]');
+
+      const userMatchIds = new Set(
+        participants.filter((p: any) => p.user_id === userId).map((p: any) => p.match_id)
+      );
+
+      const userMatches = matches.filter((m: any) => userMatchIds.has(m.id));
+      return category ? userMatches.filter((m: any) => m.category === category) : userMatches;
+    }
+
+    try {
+      const { data, error } = await supabase!
+        .from('match_participants')
+        .select('status, role, matches(*)')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const rows = (data || []).map((row: any) => ({
+        ...(row.matches || {}),
+        participant_status: row.status,
+        participant_role: row.role,
+        participant_joined_at: null,
+      }));
+
+      return category ? rows.filter((m: any) => m.category === category) : rows;
+    } catch (error) {
+      console.error('Error fetching user matches:', error);
       return [];
     }
   },

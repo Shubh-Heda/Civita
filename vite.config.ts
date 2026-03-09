@@ -5,13 +5,6 @@ import compression from 'vite-plugin-compression';
 
 export default defineConfig(({ command }) => ({
   base: process.env.GITHUB_PAGES === 'true' ? '/Avento/' : '/',
-  
-  // Ensure environment variables are properly exposed
-  define: {
-    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL),
-    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY),
-  },
-  
   plugins: [
     react(),
     // Enable gzip compression for CDN delivery

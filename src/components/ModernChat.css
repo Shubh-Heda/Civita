@@ -41,6 +41,12 @@
   letter-spacing: -0.5px;
 }
 
+.modern-chat-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .modern-chat-header-actions {
   display: flex;
   gap: 8px;

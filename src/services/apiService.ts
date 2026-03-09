@@ -9,7 +9,6 @@ import { paymentFlowService } from './paymentFlowService';
 import { trustScoreService } from './trustScoreService';
 import { friendshipStreakService } from './friendshipStreakService';
 import { localStorageService } from './localStorageService';
-import { mockDataService } from './mockDataService';
 
 /**
  * Simulate network delay for realistic API behavior
@@ -22,15 +21,8 @@ class ApiService {
    * Initialize the backend system
    */
   async initialize(): Promise<void> {
-    // Minimal initialization - defer heavy operations
-    try {
-      const existingMatches = localStorageService.getSportsMatches();
-      if (!existingMatches || existingMatches.length === 0) {
-        mockDataService.initializeMockData();
-      }
-    } catch (error) {
-      console.warn('Initialize error:', error);
-    }
+    // Backend-first mode: avoid auto-seeding mock records.
+    return;
   }
 
   // ============================================

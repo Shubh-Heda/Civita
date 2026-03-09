@@ -45,6 +45,7 @@ const MemoryTimeline = lazy(() => import('./components/MemoryTimeline').then(m =
 const PhotoAlbum = lazy(() => import('./components/PhotoAlbum').then(m => ({ default: m.PhotoAlbum })));
 const HighlightReels = lazy(() => import('./components/HighlightReels').then(m => ({ default: m.HighlightReels })));
 const ModernChat = lazy(() => import('./components/ModernChat').then(m => ({ default: m.ModernChat })));
+const MatchHistory = lazy(() => import('./components/MatchHistory').then(m => ({ default: m.MatchHistory })));
 
 import { apiService } from './services/apiService';
 import { friendshipService } from './services/friendshipService';
