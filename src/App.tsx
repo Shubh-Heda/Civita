@@ -2,11 +2,15 @@ import { useState, useEffect, lazy, Suspense, useMemo, useCallback, useRef } fro
 import { Toaster, toast } from 'sonner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Eagerly load critical components
-import { LandingPage } from './components/LandingPage';
+// Eagerly load critical components from pages subfolder
+import { Navigation } from './components/Navigation';
+import { LandingPage } from './components/pages/LandingPage';
+import { ExplorePage } from './components/pages/Explore';
+import { CommunityPage } from './components/pages/Community';
 import { AuthPage } from './components/AuthPage';
 import { OnboardingForm } from './components/OnboardingForm';
 import { ThemeProvider } from './components/ThemeProvider';
+import { Footer } from './components/Footer';
 
 // Lazy load all non-critical components for better performance
 const ComprehensiveDashboard = lazy(() => import('./components/ComprehensiveDashboard').then(m => ({ default: m.ComprehensiveDashboard })));
@@ -41,7 +45,13 @@ const MemoryTimeline = lazy(() => import('./components/MemoryTimeline').then(m =
 const PhotoAlbum = lazy(() => import('./components/PhotoAlbum').then(m => ({ default: m.PhotoAlbum })));
 const HighlightReels = lazy(() => import('./components/HighlightReels').then(m => ({ default: m.HighlightReels })));
 const ModernChat = lazy(() => import('./components/ModernChat').then(m => ({ default: m.ModernChat })));
+<<<<<<< HEAD
 const MatchHistory = lazy(() => import('./components/MatchHistory').then(m => ({ default: m.MatchHistory })));
+||||||| 8e3dd98
+=======
+const MatchHistory = lazy(() => import('./components/MatchHistory').then(m => ({ default: m.MatchHistory })));
+
+>>>>>>> landing-UI-redesign
 import { apiService } from './services/apiService';
 import { profileService, matchService, initializeDefaultData } from './services/backendService';
 import { realGroupChatService } from './services/groupChatServiceReal';
@@ -51,7 +61,13 @@ import { AuthProvider, useAuth } from './lib/AuthProvider';
 import { MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
 
+<<<<<<< HEAD
 type Page = 'landing' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'match-history' | 'help' | 'availability' | 'comprehensive-dashboard';
+||||||| 8e3dd98
+type Page = 'landing' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'help' | 'availability' | 'comprehensive-dashboard';
+=======
+type Page = 'landing' | 'explore' | 'community' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community-feed' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'help' | 'availability' | 'comprehensive-dashboard';
+>>>>>>> landing-UI-redesign
 
 interface UserProfile {
   name: string;
@@ -100,7 +116,7 @@ function AppContent({ user, loading }: AppContentProps) {
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [showLocationRequest, setShowLocationRequest] = useState(false);
   const [chatGroups, setChatGroups] = useState<{[key: string]: string}>({});
-  const [currentCategory, setCurrentCategory] = useState<'sports' | 'events'>('sports');
+  const [currentCategory, setCurrentCategory] = useState<'sports' | 'events' | 'gaming'>('sports');
   const [selectedEventDetails, setSelectedEventDetails] = useState<any>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [pendingCategory, setPendingCategory] = useState<'sports' | 'events' | 'gaming' | null>(null);
@@ -141,6 +157,75 @@ function AppContent({ user, loading }: AppContentProps) {
 
   const [eventsMatches, setEventsMatches] = useState<Match[]>([]);
 
+  // ✅ DEFINE navigateTo FIRST (with useCallback)
+  const navigateTo = useCallback((page: Page, turfId?: string, matchId?: string, groupChatId?: string, conversationId?: string) => {
+    console.log('🔄 Navigating from', currentPage, 'to', page);
+    
+    if (turfId) {
+      setSelectedTurfId(turfId);
+    }
+    if (matchId) {
+      setSelectedMatchId(matchId);
+    }
+    if (groupChatId) {
+      setSelectedGroupChatId(groupChatId);
+    }
+    if (conversationId) {
+      setSelectedConversationId(conversationId);
+    }
+    
+    // Reset category when navigating to landing or main navbar pages
+    if (page === 'landing' || page === 'explore' || page === 'community') {
+      setPendingCategory(null);
+      setCurrentPage(page);
+      setNavigationHistory([page]);
+      window.history.pushState({ page }, '', `#${page}`);
+      console.log('✅ Navigated to navbar page:', page);
+      return;
+    }
+    
+    // Track category based on page navigation
+    if (page === 'dashboard' || page === 'profile' || page === 'sports-community' || page === 'finder' || page === 'create-match' || page === 'turf-detail' || page === 'sports-events' || page === 'sports-photos' || page === 'sports-highlights' || page === 'sports-memories') {
+      setCurrentCategory('sports');
+    } else if (page === 'events-dashboard' || page === 'events-profile' || page === 'cultural-community' || page === 'events-events' || page === 'create-event-booking' || page === 'events-photos' || page === 'events-highlights' || page === 'events-memories') {
+      setCurrentCategory('events');
+    } else if (page === 'gaming-hub' || page === 'gaming-profile' || page === 'gaming-community' || page === 'gaming-chat' || page === 'gaming-map' || page === 'gaming-events' || page === 'gaming-photos' || page === 'gaming-highlights' || page === 'gaming-memories') {
+      setCurrentCategory('gaming');
+    }
+    
+    if (page === 'community-feed' && sportsMatches.filter(m => m.status === 'upcoming').length > 0) {
+      toast.success('🎉 Your matches are waiting for you!', {
+        description: `You have ${sportsMatches.filter(m => m.status === 'upcoming').length} upcoming match${sportsMatches.filter(m => m.status === 'upcoming').length > 1 ? 'es' : ''} ready to play!`,
+        duration: 4000,
+      });
+    }
+    
+    setCurrentPage(page);
+    setNavigationHistory(prev => [...prev, page]);
+    window.history.pushState({ page }, '', `#${page}`);
+    console.log('✅ Navigated to:', page);
+  }, [currentPage, sportsMatches]);
+
+  // ✅ DEFINE goBack SECOND (depends on navigateTo)
+  const goBack = useCallback(() => {
+    console.log('⏮️ Going back. History:', navigationHistory);
+    
+    if (navigationHistory.length > 1) {
+      const newHistory = navigationHistory.slice(0, -1);
+      const previousPage = newHistory[newHistory.length - 1];
+      
+      console.log('⏮️ Previous page:', previousPage);
+      
+      setNavigationHistory(newHistory);
+      setCurrentPage(previousPage);
+      
+      window.history.back();
+    } else {
+      console.log('⏮️ At root, going to landing');
+      navigateTo('landing');
+    }
+  }, [navigationHistory, navigateTo]);
+
   // Reset scroll position when page changes
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -166,7 +251,7 @@ function AppContent({ user, loading }: AppContentProps) {
     }
   }, [user?.onboarding_completed, user?.name, updateProfiles]);
   
-  // Initialize backend on app mount - run only once
+  // Initialize backend on app mount
   useEffect(() => {
     const initBackend = async () => {
       try {
@@ -182,13 +267,11 @@ function AppContent({ user, loading }: AppContentProps) {
 
         await apiService.initialize();
         
-        // Initialize Supabase backend with default data if user is logged in
         if (user) {
           try {
             await initializeDefaultData(user.id);
             console.log('✅ Supabase backend initialized with default data');
             
-            // Load profile from backend
             const { data: profileData } = await profileService.getUserProfile(user.id);
             if (profileData) {
               const formattedProfile = {
@@ -202,8 +285,15 @@ function AppContent({ user, loading }: AppContentProps) {
               setEventsProfile(formattedProfile);
             }
             
+<<<<<<< HEAD
             // Load matches from backend (user-specific)
             const sportsMatchesData = await matchService.getUserMatches(user.id, 'sports');
+||||||| 8e3dd98
+            // Load matches from backend
+            const sportsMatchesData = await matchService.getMatches('sports');
+=======
+            const sportsMatchesData = await matchService.getMatches('sports');
+>>>>>>> landing-UI-redesign
             if (sportsMatchesData.length > 0) {
               setSportsMatches(sportsMatchesData.map(m => ({
                 id: m.id,
@@ -246,16 +336,60 @@ function AppContent({ user, loading }: AppContentProps) {
                 turfCost: m.turf_cost
               })));
             }
-            
           } catch (dbError) {
             console.error('Supabase initialization error:', dbError);
             toast.error('Could not connect to backend. Using local data.');
           }
         }
         
+<<<<<<< HEAD
         // Backend-first mode: do not auto-initialize mock seed data.
+||||||| 8e3dd98
+        // Initialize friendship mock data
+        if (!localStorage.getItem('civita_friendships')) {
+          friendshipService.initializeMockFriendships();
+          console.log('✅ Friendship mock data initialized');
+        }
         
-        // Check if there's stored location
+        // Initialize gratitude mock data
+        if (!localStorage.getItem('civita_gratitude')) {
+          gratitudeService.initializeMockGratitude();
+          console.log('✅ Gratitude mock data initialized');
+        }
+        
+        // Initialize post-match mock data
+        if (!localStorage.getItem('civita_post_match_memories')) {
+          postMatchService.initializeMockData();
+          console.log('✅ Post-match mock data initialized');
+        }
+        
+        // Initialize achievement & gamification mock data
+        if (!localStorage.getItem('civta_achievements')) {
+          achievementService.initializeMockData('user_001');
+          console.log('✅ Achievement mock data initialized');
+        }
+=======
+        if (!localStorage.getItem('civita_friendships')) {
+          friendshipService.initializeMockFriendships();
+          console.log('✅ Friendship mock data initialized');
+        }
+        
+        if (!localStorage.getItem('civita_gratitude')) {
+          gratitudeService.initializeMockGratitude();
+          console.log('✅ Gratitude mock data initialized');
+        }
+        
+        if (!localStorage.getItem('civita_post_match_memories')) {
+          postMatchService.initializeMockData();
+          console.log('✅ Post-match mock data initialized');
+        }
+        
+        if (!localStorage.getItem('civta_achievements')) {
+          achievementService.initializeMockData('user_001');
+          console.log('✅ Achievement mock data initialized');
+        }
+>>>>>>> landing-UI-redesign
+        
         const storedLocation = localStorage.getItem('userLocation');
         if (storedLocation) {
           setUserLocation(JSON.parse(storedLocation));
@@ -270,18 +404,17 @@ function AppContent({ user, loading }: AppContentProps) {
     initBackend();
   }, [user]);
   
-  const handleGetStarted = () => {
+  const handleGetStarted = useCallback(() => {
     setCurrentPage('auth');
-  };
+  }, []);
 
-  const handleCategorySelectFromLanding = (category: 'sports' | 'events' | 'parties' | 'gaming') => {
+  const handleCategorySelectFromLanding = useCallback((category: 'sports' | 'events' | 'parties' | 'gaming') => {
     console.log('🎮 LANDING PAGE - Category selected:', category);
     
-    // If gaming, go directly to gaming hub (no location needed)
     if (category === 'gaming') {
       if (!user) {
         console.log('🎮 User not logged in - setting pending category to gaming');
-        setPendingCategory('gaming'); // FIXED: Set to gaming instead of sports!
+        setPendingCategory('gaming');
         setCurrentPage('auth');
       } else {
         console.log('🎮 User logged in - going directly to gaming-hub');
@@ -292,17 +425,13 @@ function AppContent({ user, loading }: AppContentProps) {
       return;
     }
     
-    // Store the selected category for sports/events/parties
     setPendingCategory(category);
     setCurrentCategory(category);
     
-    // If user is not authenticated, show auth page
     if (!user) {
       setCurrentPage('auth');
     } else {
-      // If already authenticated and location was granted, go directly to dashboard
       if (locationPermissionGranted) {
-        // Navigate directly to the appropriate dashboard
         if (category === 'sports') {
           setCurrentPage('dashboard');
         } else if (category === 'events') {
@@ -310,16 +439,14 @@ function AppContent({ user, loading }: AppContentProps) {
         }
         setPendingCategory(null);
       } else {
-        // Otherwise, request location
         setShowLocationRequest(true);
       }
     }
-  };
+  }, [user, locationPermissionGranted]);
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = useCallback(() => {
     console.log('🎮 Auth successful! Pending category:', pendingCategory);
     
-    // If pending category is gaming, go directly to gaming hub (no location needed)
     if (pendingCategory === 'gaming') {
       console.log('🎮 Going to gaming hub after auth');
       setCurrentPage('gaming-hub');
@@ -327,13 +454,11 @@ function AppContent({ user, loading }: AppContentProps) {
       return;
     }
     
-    // Request location immediately after successful auth for other categories
     setShowLocationRequest(true);
-  };
+  }, [pendingCategory]);
 
-  const handleLocationPermission = () => {
+  const handleLocationPermission = useCallback(() => {
     if (navigator.geolocation) {
-      // Show loading state
       toast.loading('Getting your location...', { id: 'location-loading' });
       
       navigator.geolocation.getCurrentPosition(
@@ -347,37 +472,40 @@ function AppContent({ user, loading }: AppContentProps) {
           setShowLocationRequest(false);
           setUserLocation(locationData);
           
-          // Save location to localStorage for persistence
           localStorage.setItem('userLocation', JSON.stringify(locationData));
           localStorage.setItem('locationSource', 'gps');
           
-          // Log location for debugging
           console.log('User location captured:', locationData);
           
-          // Dismiss loading toast
           toast.dismiss('location-loading');
           
           toast.success('Location access granted! 📍', {
             description: 'We can now show you nearby experiences.',
           });
           
-          // Navigate to the appropriate category dashboard
           if (pendingCategory === 'sports') {
             setCurrentCategory('sports');
             setCurrentPage('dashboard');
           } else if (pendingCategory === 'events') {
             setCurrentCategory('events');
             setCurrentPage('events-dashboard');
+<<<<<<< HEAD
+||||||| 8e3dd98
+          } else if (pendingCategory === 'parties') {
+            setCurrentCategory('parties');
+            setCurrentPage('party-dashboard');
+=======
+          } else if (pendingCategory === 'parties') {
+            setCurrentCategory('parties');
+            setCurrentPage('events-dashboard');
+>>>>>>> landing-UI-redesign
           }
           
-          // Clear pending category
           setPendingCategory(null);
         },
         (error) => {
-          // Dismiss loading toast
           toast.dismiss('location-loading');
           
-          // Use default location (Ahmedabad) as fallback
           const defaultLocation = {
             latitude: 23.0225,
             longitude: 72.5714,
@@ -410,16 +538,24 @@ function AppContent({ user, loading }: AppContentProps) {
           });
           setShowLocationRequest(false);
           
-          // Navigate to the appropriate category dashboard
           if (pendingCategory === 'sports') {
             setCurrentCategory('sports');
             setCurrentPage('dashboard');
           } else if (pendingCategory === 'events') {
             setCurrentCategory('events');
             setCurrentPage('events-dashboard');
+<<<<<<< HEAD
+||||||| 8e3dd98
+          } else if (pendingCategory === 'parties') {
+            setCurrentCategory('parties');
+            setCurrentPage('party-dashboard');
+=======
+          } else if (pendingCategory === 'parties') {
+            setCurrentCategory('parties');
+            setCurrentPage('events-dashboard');
+>>>>>>> landing-UI-redesign
           }
           
-          // Clear pending category
           setPendingCategory(null);
         },
         {
@@ -429,7 +565,6 @@ function AppContent({ user, loading }: AppContentProps) {
         }
       );
     } else {
-      // Use default location if geolocation not supported
       const defaultLocation = {
         latitude: 23.0225,
         longitude: 72.5714,
@@ -444,22 +579,29 @@ function AppContent({ user, loading }: AppContentProps) {
       });
       setShowLocationRequest(false);
       
-      // Navigate to the appropriate category dashboard
       if (pendingCategory === 'sports') {
         setCurrentCategory('sports');
         setCurrentPage('dashboard');
       } else if (pendingCategory === 'events') {
         setCurrentCategory('events');
         setCurrentPage('events-dashboard');
+<<<<<<< HEAD
+||||||| 8e3dd98
+      } else if (pendingCategory === 'parties') {
+        setCurrentCategory('parties');
+        setCurrentPage('party-dashboard');
+=======
+      } else if (pendingCategory === 'parties') {
+        setCurrentCategory('parties');
+        setCurrentPage('events-dashboard');
+>>>>>>> landing-UI-redesign
       }
       
-      // Clear pending category
       setPendingCategory(null);
     }
-  };
+  }, [pendingCategory]);
 
-  const handleSkipLocation = () => {
-    // Use default location (Ahmedabad) when skipped
+  const handleSkipLocation = useCallback(() => {
     const defaultLocation = {
       latitude: 23.0225,
       longitude: 72.5714,
@@ -473,7 +615,6 @@ function AppContent({ user, loading }: AppContentProps) {
     
     setShowLocationRequest(false);
     
-    // Navigate to the appropriate category dashboard
     if (pendingCategory === 'sports') {
       setCurrentCategory('sports');
       setCurrentPage('dashboard');
@@ -482,34 +623,12 @@ function AppContent({ user, loading }: AppContentProps) {
       setCurrentPage('events-dashboard');
     }
     
-    // Clear pending category
     setPendingCategory(null);
-  };
+  }, [pendingCategory]);
 
-  const handleCategorySelect = (category: 'sports' | 'events' | 'parties' | 'gaming') => {
-    console.log('🎮 Category selected:', category);
-    console.log('📍 Current page before navigation:', currentPage);
-    
-    if (category === 'gaming') {
-      console.log('🎮 Navigating to Gaming Hub');
-      setCurrentPage('gaming-hub');
-      console.log('🎮 Page should now be: gaming-hub');
-      return; // Exit early to prevent other logic
-    }
-    
-    if (category === 'sports') {
-      setCurrentCategory('sports');
-      setCurrentPage('dashboard');
-    } else if (category === 'events') {
-      setCurrentCategory('events');
-      setCurrentPage('events-dashboard');
-    }
-  };
-
-  const handleSportsProfileUpdate = async (updatedProfile: UserProfile) => {
+  const handleSportsProfileUpdate = useCallback(async (updatedProfile: UserProfile) => {
     setSportsProfile(updatedProfile);
     
-    // Save to backend if user is logged in
     if (user) {
       try {
         const { data: existingProfile } = await profileService.getUserProfile(user.id);
@@ -524,8 +643,19 @@ function AppContent({ user, loading }: AppContentProps) {
             description: 'Your changes have been saved!',
           });
         } else {
+<<<<<<< HEAD
           // Create new profile if doesn't exist
           await profileService.updateUserProfile(user.id, {
+||||||| 8e3dd98
+          // Create new profile if doesn't exist
+          await profileService.createProfile({
+            id: user.id,
+            user_id: user.id,
+=======
+          await profileService.createProfile({
+            id: user.id,
+            user_id: user.id,
+>>>>>>> landing-UI-redesign
             name: updatedProfile.name,
             bio: updatedProfile.bio,
             interests: updatedProfile.interests,
@@ -536,7 +666,6 @@ function AppContent({ user, loading }: AppContentProps) {
         }
       } catch (error) {
         console.error('Error updating sports profile:', error);
-        // Still show success - profile is saved locally
         toast.info('Profile Saved Locally! 📱', {
           description: 'Will sync when online.',
         });
@@ -546,12 +675,11 @@ function AppContent({ user, loading }: AppContentProps) {
         description: 'Sign in to sync across devices!',
       });
     }
-  };
+  }, [user]);
 
-  const handleEventsProfileUpdate = async (updatedProfile: UserProfile) => {
+  const handleEventsProfileUpdate = useCallback(async (updatedProfile: UserProfile) => {
     setEventsProfile(updatedProfile);
     
-    // Save to backend if user is logged in
     if (user) {
       try {
         const { data: existingProfile } = await profileService.getUserProfile(user.id);
@@ -586,12 +714,12 @@ function AppContent({ user, loading }: AppContentProps) {
         description: 'Sign in to sync across devices!',
       });
     }
-  };
+  }, [user]);
 
-  const handleMatchCreate = async (match: Match) => {
-    // Add to local state first
+  const handleMatchCreate = useCallback(async (match: Match) => {
     setSportsMatches(prev => [...prev, match]);
     
+<<<<<<< HEAD
     // Check if this is a direct payment match
     const isDirectPayment = match.paymentOption === 'Pay Directly' || match.paymentOption === 'Direct Payment';
     
@@ -602,8 +730,19 @@ function AppContent({ user, loading }: AppContentProps) {
         [match.id]: match.title
       }));
     }
+||||||| 8e3dd98
+    // Create a chat group for this match
+    setChatGroups(prev => ({
+      ...prev,
+      [match.id]: match.title
+    }));
+=======
+    setChatGroups(prev => ({
+      ...prev,
+      [match.id]: match.title
+    }));
+>>>>>>> landing-UI-redesign
     
-    // Save to backend if user is logged in
     if (user) {
       try {
         const { data: createdMatch, error: matchError } = await matchService.addMatch({
@@ -629,11 +768,17 @@ function AppContent({ user, loading }: AppContentProps) {
           throw new Error(matchError);
         }
 
+<<<<<<< HEAD
         const persistedMatchId = createdMatch?.id || match.id;
 
         await matchService.addMatchParticipant(persistedMatchId, user.id, 'organizer', 'joined');
         
         // Always create group chat for ALL matches for coordination and community
+||||||| 8e3dd98
+        const totalCost = match.amount ?? match.turfCost ?? 0;
+        // ALWAYS create modern chat conversation for match
+=======
+>>>>>>> landing-UI-redesign
         try {
           const matchId = persistedMatchId;
           const conversation = await modernChatService.createGroupConversation(
@@ -641,9 +786,10 @@ function AppContent({ user, loading }: AppContentProps) {
             `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
             user.id,
             user.name || user.email || 'Organizer',
-            [] // Members can join via match discovery
+            []
           );
           
+<<<<<<< HEAD
           // Update discovery hub with conversation ID
           const matchWithChat = { 
             matchId: persistedMatchId,
@@ -659,16 +805,27 @@ function AppContent({ user, loading }: AppContentProps) {
             visibility: match.visibility as 'community' | 'nearby' | 'private',
             groupChatId: conversation.id 
           };
+||||||| 8e3dd98
+          // Update discovery hub with conversation ID
+          const matchWithChat = { ...match, groupChatId: conversation.id };
+=======
+          const matchWithChat = { ...match, groupChatId: conversation.id };
+>>>>>>> landing-UI-redesign
           matchNotificationService.saveMatchToDiscoverable(matchWithChat);
           
           navigateTo('modern-chat', undefined, undefined, undefined, conversation.id);
           console.log('✅ Modern chat conversation created for match:', conversation.id);
           
+<<<<<<< HEAD
           // Send welcome message to conversation with appropriate payment info
           const paymentInfo = isDirectPayment 
             ? '\n\n💳 Payment: Direct payment confirmed!'
             : `\n\n💰 Payment: Split costs after minimum ${match.minPlayers} players join`;
           
+||||||| 8e3dd98
+          // Send welcome message to conversation
+=======
+>>>>>>> landing-UI-redesign
           await modernChatService.sendMessage(
             conversation.id,
             user.id,
@@ -682,19 +839,37 @@ function AppContent({ user, loading }: AppContentProps) {
           });
         } catch (chatError) {
           console.error('Note: Modern chat creation failed:', chatError);
+<<<<<<< HEAD
           // Still provide good UX even if chat fails
           navigateTo('match-history');
           toast.info('Match Created! 🎉', {
             description: 'Group chat will be available soon!',
           });
+||||||| 8e3dd98
+          // Still navigate to modern chat even if creation fails
+          navigateTo('modern-chat');
+=======
+          navigateTo('modern-chat');
+>>>>>>> landing-UI-redesign
         }
         
         console.log('✅ Match saved to backend:', match.title);
       } catch (error) {
         console.error('❌ Error saving match to backend:', error);
+<<<<<<< HEAD
         navigateTo('match-history');
         toast.error('Match save failed', {
           description: 'Backend rejected the match. Please check schema setup and try again.',
+||||||| 8e3dd98
+        // Still navigate to modern chat even if backend save fails
+        navigateTo('modern-chat');
+        toast.info('Match Created! 🎉', {
+          description: 'Chat ready - opening now!',
+=======
+        navigateTo('modern-chat');
+        toast.info('Match Created! 🎉', {
+          description: 'Chat ready - opening now!',
+>>>>>>> landing-UI-redesign
         });
       }
     } else {
@@ -703,30 +878,33 @@ function AppContent({ user, loading }: AppContentProps) {
         description: 'Sign in to save to backend and create group chat!',
       });
     }
-  };
+  }, [user, navigateTo]);
 
-  const handleMatchJoin = async (match: Match) => {
-    // Add to local state first
+  const handleMatchJoin = useCallback(async (match: Match) => {
     setSportsMatches(prev => [...prev, match]);
     
-    // Create a chat group for this match
     setChatGroups(prev => ({
       ...prev,
       [match.id]: match.title
     }));
     
-    // Save join to backend if user is logged in
     if (user) {
       try {
-        // Create or join the match in backend
         const existingMatch = await matchService.getMatches('sports');
         
         const matchExists = existingMatch.find(m => m.id === match.id);
         let persistedMatchId = match.id;
         
         if (!matchExists) {
+<<<<<<< HEAD
           // Create the match if it doesn't exist
           const { data: createdMatch, error: createError } = await matchService.addMatch({
+||||||| 8e3dd98
+          // Create the match if it doesn't exist
+          const { error: createError } = await matchService.addMatch({
+=======
+          const { error: createError } = await matchService.addMatch({
+>>>>>>> landing-UI-redesign
             user_id: user.id,
             title: match.title,
             turf_name: match.turfName,
@@ -754,9 +932,15 @@ function AppContent({ user, loading }: AppContentProps) {
           }
         }
 
+<<<<<<< HEAD
         await matchService.addMatchParticipant(persistedMatchId, user.id, 'player', 'joined');
 
         // ALWAYS get or create group chat for match, regardless of cost
+||||||| 8e3dd98
+        const totalCost = match.amount ?? match.turfCost ?? 0;
+        // ALWAYS get or create group chat for match, regardless of cost
+=======
+>>>>>>> landing-UI-redesign
         try {
           let groupChat = await realGroupChatService.getGroupChatByMatchId(persistedMatchId);
           if (!groupChat) {
@@ -765,8 +949,33 @@ function AppContent({ user, loading }: AppContentProps) {
               match.title,
               match.sport || 'Match',
               user.id,
+<<<<<<< HEAD
               user.name,
               user.email
+||||||| 8e3dd98
+              user.name || user.email || 'Organizer',
+              user.email || 'organizer@example.com'
+            );
+          } else {
+            // Add user as member
+            await realGroupChatService.addMember(
+              groupChat.id,
+              user.id,
+              'member',
+              user.name || user.email || 'Player',
+              user.email || 'player@example.com'
+=======
+              user.name || user.email || 'Organizer',
+              user.email || 'organizer@example.com'
+            );
+          } else {
+            await realGroupChatService.addMember(
+              groupChat.id,
+              user.id,
+              'member',
+              user.name || user.email || 'Player',
+              user.email || 'player@example.com'
+>>>>>>> landing-UI-redesign
             );
           }
           navigateTo('modern-chat');
@@ -774,16 +983,38 @@ function AppContent({ user, loading }: AppContentProps) {
             description: 'Chat ready to use!',
           });
         } catch (chatError) {
+<<<<<<< HEAD
           console.error('Chat error:', chatError);
+||||||| 8e3dd98
+          console.error('Note: Group chat access failed:', chatError);
+          // Navigate to modern chat page anyway
+          navigateTo('modern-chat');
+=======
+          console.error('Note: Group chat access failed:', chatError);
+          navigateTo('modern-chat');
+>>>>>>> landing-UI-redesign
         }
 
         toast.success('Match Joined! ⚽', {
           description: 'You\'ve joined the match!',
         });
       } catch (error) {
+<<<<<<< HEAD
         console.error('Error joining match:', error);
         toast.error('Failed to join match', {
           description: 'Please try again',
+||||||| 8e3dd98
+        console.error('❌ Error joining match:', error);
+        // Still try to navigate to modern chat
+        navigateTo('modern-chat');
+        toast.info('Joined Locally! 📱', {
+          description: 'Chat ready to use!',
+=======
+        console.error('❌ Error joining match:', error);
+        navigateTo('modern-chat');
+        toast.info('Joined Locally! 📱', {
+          description: 'Chat ready to use!',
+>>>>>>> landing-UI-redesign
         });
       }
     } else {
@@ -791,13 +1022,11 @@ function AppContent({ user, loading }: AppContentProps) {
         description: 'Sign in to sync your booking!',
       });
     }
-  };
+  }, [user, navigateTo]);
 
-  const handleEventBook = async (event: any) => {
-    // Add to local state first
+  const handleEventBook = useCallback(async (event: any) => {
     setEventsMatches(prev => [...prev, event]);
     
-    // Create a chat group for this event if requested
     if (event.createGroupChat) {
       setChatGroups(prev => ({
         ...prev,
@@ -805,7 +1034,6 @@ function AppContent({ user, loading }: AppContentProps) {
       }));
     }
     
-    // Save to backend if user is logged in
     if (user) {
       try {
         const { error: eventError } = await matchService.addMatch({
@@ -844,11 +1072,12 @@ function AppContent({ user, loading }: AppContentProps) {
         description: 'Sign in to sync your booking!',
       });
     }
-  };
+  }, [user]);
 
-  const handleBookEvent = (eventDetails: any) => {
+  const handleBookEvent = useCallback((eventDetails: any) => {
     setSelectedEventDetails(eventDetails);
     setCurrentPage('create-event-booking');
+<<<<<<< HEAD
   };
 
   const navigateTo = (page: Page, turfId?: string, matchId?: string, groupChatId?: string, conversationId?: string) => {
@@ -895,6 +1124,119 @@ function AppContent({ user, loading }: AppContentProps) {
     setCurrentPage(page);
   };
 
+||||||| 8e3dd98
+  };
+
+  const navigateTo = (page: Page, turfId?: string, matchId?: string, groupChatId?: string, conversationId?: string) => {
+    if (turfId) {
+      setSelectedTurfId(turfId);
+    }
+    if (matchId) {
+      setSelectedMatchId(matchId);
+    }
+    if (groupChatId) {
+      setSelectedGroupChatId(groupChatId);
+    }
+    if (conversationId) {
+      setSelectedConversationId(conversationId);
+    }
+    
+    // Reset category when navigating to landing
+    if (page === 'landing') {
+      // Clear any pending state when going back to landing
+      setPendingCategory(null);
+      setCurrentPage(page);
+      // Add to navigation history
+      setNavigationHistory(prev => [...prev, page]);
+      // Update browser history
+      window.history.pushState({ page }, '', `#${page}`);
+      return;
+    }
+    
+    // Track category based on where we're navigating from/to
+    // DON'T change category when going to comprehensive-dashboard, availability, help, chat - keep current category
+    if (page === 'dashboard' || page === 'profile' || page === 'sports-community' || page === 'finder' || page === 'create-match' || page === 'turf-detail' || page === 'sports-events' || page === 'sports-photos' || page === 'sports-highlights' || page === 'sports-memories') {
+      setCurrentCategory('sports');
+    } else if (page === 'events-dashboard' || page === 'events-profile' || page === 'cultural-community' || page === 'events-events' || page === 'create-event-booking' || page === 'events-photos' || page === 'events-highlights' || page === 'events-memories') {
+      setCurrentCategory('events');
+    } else if (page === 'gaming-hub' || page === 'gaming-profile' || page === 'gaming-community' || page === 'gaming-chat' || page === 'gaming-map' || page === 'gaming-events' || page === 'gaming-photos' || page === 'gaming-highlights' || page === 'gaming-memories') {
+      setCurrentCategory('gaming');
+    }
+    // For 'comprehensive-dashboard', 'availability', 'help', 'chat', 'group-chat', 'dm-chat', etc., keep the current category
+    
+    // Show notification when navigating to community if there are upcoming matches
+    if (page === 'community' && sportsMatches.filter(m => m.status === 'upcoming').length > 0) {
+      toast.success('🎉 Your matches are waiting for you!', {
+        description: `You have ${sportsMatches.filter(m => m.status === 'upcoming').length} upcoming match${sportsMatches.filter(m => m.status === 'upcoming').length > 1 ? 'es' : ''} ready to play!`,
+        duration: 4000,
+      });
+    }
+    
+    setCurrentPage(page);
+    // Add to navigation history
+    setNavigationHistory(prev => [...prev, page]);
+    // Update browser history
+    window.history.pushState({ page }, '', `#${page}`);
+  };
+
+  // Go back to previous page
+  const goBack = () => {
+    if (navigationHistory.length > 1) {
+      // Remove current page from history
+      const newHistory = [...navigationHistory];
+      newHistory.pop();
+      const previousPage = newHistory[newHistory.length - 1];
+      
+      setNavigationHistory(newHistory);
+      setCurrentPage(previousPage);
+      
+      // Update browser history
+      window.history.back();
+    } else {
+      // If no history, go to landing
+      navigateTo('landing');
+    }
+  };
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.page) {
+        setCurrentPage(event.state.page);
+        // Update navigation history to match
+        setNavigationHistory(prev => {
+          const newHistory = [...prev];
+          newHistory.pop();
+          return newHistory;
+        });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+=======
+  }, []);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.page) {
+        setCurrentPage(event.state.page);
+        setNavigationHistory(prev => {
+          const newHistory = [...prev];
+          newHistory.pop();
+          return newHistory;
+        });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+>>>>>>> landing-UI-redesign
   useEffect(() => {
     if (!user || inviteHandledRef.current) {
       return;
@@ -942,14 +1284,51 @@ function AppContent({ user, loading }: AppContentProps) {
     );
   }
 
-  // Show landing page for both authenticated and non-authenticated users
+  // Show landing page by default
   if (currentPage === 'landing') {
-    return <LandingPage onGetStarted={handleGetStarted} onCategorySelect={handleCategorySelectFromLanding} />;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Toaster position="top-center" richColors />
+        <Navigation currentPage="landing" onNavigate={navigateTo} onGetStarted={handleGetStarted} />
+        <div className="flex-grow">
+          <LandingPage onGetStarted={handleGetStarted} onCategorySelect={handleCategorySelectFromLanding} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show explore page with persistent navbar
+  if (currentPage === 'explore') {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Toaster position="top-center" richColors />
+        <Navigation currentPage="explore" onNavigate={navigateTo} onGetStarted={handleGetStarted} />
+        <div className="flex-grow">
+          <ExplorePage />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show community page with persistent navbar
+  if (currentPage === 'community') {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Toaster position="top-center" richColors />
+        <Navigation currentPage="community" onNavigate={navigateTo} onGetStarted={handleGetStarted} />
+        <div className="flex-grow">
+          <CommunityPage />
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   // Show auth page if user clicked get started but not logged in
   if (!user && currentPage === 'auth') {
-    return <AuthPage onAuthSuccess={handleAuthSuccess} onBack={() => setCurrentPage('landing')} />;
+    return <AuthPage onAuthSuccess={handleAuthSuccess} onBack={() => navigateTo('landing')} />;
   }
 
   // Show onboarding form if user is logged in but hasn't completed onboarding
@@ -957,13 +1336,12 @@ function AppContent({ user, loading }: AppContentProps) {
     return (
       <OnboardingForm 
         onComplete={() => {
-          // After onboarding, redirect to appropriate dashboard
           if (pendingCategory === 'gaming') {
             navigateTo('gaming-hub');
           } else if (pendingCategory === 'events') {
             navigateTo('events-dashboard');
           } else if (pendingCategory === 'parties') {
-            navigateTo('party-dashboard');
+            navigateTo('events-dashboard');
           } else {
             navigateTo('dashboard');
           }
@@ -1075,6 +1453,7 @@ function AppContent({ user, loading }: AppContentProps) {
           </div>
         </div>
       }>
+<<<<<<< HEAD
         {currentPage === 'dashboard' && <Dashboard onNavigate={navigateTo} userProfile={sportsProfile} matches={sportsMatches} />}
         {currentPage === 'events-dashboard' && <EventsDashboard onNavigate={navigateTo} userProfile={eventsProfile} onBookEvent={handleBookEvent} />}
         {currentPage === 'gaming-hub' && <GamingHub onNavigate={navigateTo} />}
@@ -1109,6 +1488,71 @@ function AppContent({ user, loading }: AppContentProps) {
         {currentPage === 'sports-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="sports" />}
         {currentPage === 'events-chat' && <WhatsAppChat onNavigate={navigateTo} matchId={selectedMatchId} category="events" />}
         {currentPage === 'group-chat' && selectedGroupChatId && (
+||||||| 8e3dd98
+        {currentPage === 'dashboard' && <Dashboard onNavigate={navigateTo} onBack={goBack} userProfile={sportsProfile} matches={sportsMatches} />}
+        {currentPage === 'events-dashboard' && <EventsDashboard onNavigate={navigateTo} onBack={goBack} userProfile={eventsProfile} onBookEvent={handleBookEvent} />}
+        {currentPage === 'gaming-hub' && <GamingHub onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-profile' && <GamingProfilePage onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-community' && <GamingCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-chat' && <GroupChatGaming onNavigate={navigateTo} onBack={goBack} matchId={selectedMatchId} />}
+        {currentPage === 'gaming-map' && <GamingMapView onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'map-view' && <MapView onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-events' && <CommunityEvents category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-events' && <CommunityEvents category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-photos' && <PhotoAlbum category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-photos' && <PhotoAlbum category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-photos' && <PhotoAlbum category="gaming" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-highlights' && <HighlightReels category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-highlights' && <HighlightReels category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-highlights' && <HighlightReels category="gaming" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-memories' && <MemoryTimeline category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-memories' && <MemoryTimeline category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-memories' && <MemoryTimeline category="gaming" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'profile' && <ProfilePage onNavigate={navigateTo} onBack={goBack} onProfileUpdate={handleSportsProfileUpdate} userProfile={sportsProfile} matches={sportsMatches} />}
+        {currentPage === 'events-profile' && <EventsProfilePage onNavigate={navigateTo} onBack={goBack} onProfileUpdate={handleEventsProfileUpdate} userProfile={eventsProfile} matches={eventsMatches} />}
+        {currentPage === 'community' && <CommunityFeed onNavigate={navigateTo} onBack={goBack} matches={sportsMatches} />}
+        {currentPage === 'sports-community' && <SportsCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'cultural-community' && <CulturalCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'reflection' && <PostMatchReflection onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'finder' && <MatchFinder onNavigate={navigateTo} onBack={goBack} onMatchJoin={handleMatchJoin} />}
+        {currentPage === 'discovery' && <DiscoveryHub onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onBack={goBack} onMatchCreate={handleMatchCreate} />}
+        {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onBack={goBack} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
+        {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} onBack={goBack} turfId={selectedTurfId} />}
+        {(currentPage === 'chat' || currentPage === 'sports-chat' || currentPage === 'events-chat' || currentPage === 'group-chat' || currentPage === 'dm-chat' || currentPage === 'modern-chat') && (
+=======
+        {currentPage === 'dashboard' && <Dashboard onNavigate={navigateTo} onBack={goBack} userProfile={sportsProfile} matches={sportsMatches} />}
+        {currentPage === 'events-dashboard' && <EventsDashboard onNavigate={navigateTo} onBack={goBack} userProfile={eventsProfile} onBookEvent={handleBookEvent} />}
+        {currentPage === 'gaming-hub' && <GamingHub onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-profile' && <GamingProfilePage onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-community' && <GamingCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-chat' && <GroupChatGaming onNavigate={navigateTo} onBack={goBack} matchId={selectedMatchId} />}
+        {currentPage === 'gaming-map' && <GamingMapView onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'map-view' && <MapView onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-events' && <CommunityEvents category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-events' && <CommunityEvents category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-photos' && <PhotoAlbum category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-photos' && <PhotoAlbum category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-photos' && <PhotoAlbum category="gaming" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-highlights' && <HighlightReels category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-highlights' && <HighlightReels category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-highlights' && <HighlightReels category="gaming" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'sports-memories' && <MemoryTimeline category="sports" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'events-memories' && <MemoryTimeline category="events" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'gaming-memories' && <MemoryTimeline category="gaming" onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'profile' && <ProfilePage onNavigate={navigateTo} onBack={goBack} onProfileUpdate={handleSportsProfileUpdate} userProfile={sportsProfile} matches={sportsMatches} />}
+        {currentPage === 'events-profile' && <EventsProfilePage onNavigate={navigateTo} onBack={goBack} onProfileUpdate={handleEventsProfileUpdate} userProfile={eventsProfile} matches={eventsMatches} />}
+        {currentPage === 'community-feed' && <CommunityFeed onNavigate={navigateTo} onBack={goBack} matches={sportsMatches} />}
+        {currentPage === 'sports-community' && <SportsCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'cultural-community' && <CulturalCommunityFeed onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'reflection' && <PostMatchReflection onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'finder' && <MatchFinder onNavigate={navigateTo} onBack={goBack} onMatchJoin={handleMatchJoin} />}
+        {currentPage === 'discovery' && <DiscoveryHub onNavigate={navigateTo} onBack={goBack} />}
+        {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onBack={goBack} onMatchCreate={handleMatchCreate} />}
+        {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onBack={goBack} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
+        {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} onBack={goBack} turfId={selectedTurfId} />}
+        {(currentPage === 'chat' || currentPage === 'sports-chat' || currentPage === 'events-chat' || currentPage === 'group-chat' || currentPage === 'dm-chat' || currentPage === 'modern-chat') && (
+>>>>>>> landing-UI-redesign
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading chat...</div>}>
             <GroupChatComponent chatId={selectedGroupChatId} onClose={() => navigateTo('dashboard')} />
           </Suspense>

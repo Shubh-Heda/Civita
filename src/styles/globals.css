@@ -1,4 +1,6 @@
-@custom-variant dark (&:is(.dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --font-size: 16px;
@@ -78,122 +80,62 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-input-background: var(--input-background);
-  --color-switch-background: var(--switch-background);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+
+  html {
+    font-size: var(--font-size);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, 
+                 Ubuntu, Cantarell, "Helvetica Neue", sans-serif, "Apple Color Emoji", 
+                 "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   }
 
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography */
+  h1 {
+    @apply text-2xl font-medium leading-relaxed;
+  }
+
+  h2 {
+    @apply text-xl font-medium leading-relaxed;
+  }
+
+  h3 {
+    @apply text-lg font-medium leading-relaxed;
+  }
+
+  h4 {
+    @apply text-base font-medium leading-relaxed;
+  }
+
+  p {
+    @apply text-base font-normal leading-relaxed;
+  }
+
+  label {
+    @apply text-base font-medium leading-relaxed;
+  }
+
+  button {
+    @apply text-base font-medium leading-relaxed;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply text-base font-normal leading-relaxed;
+    font-size: 16px !important;
   }
 }
 
-/**
- * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
- */
-@layer base {
-  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
-    h1 {
-      font-size: var(--text-2xl);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    h2 {
-      font-size: var(--text-xl);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    h3 {
-      font-size: var(--text-lg);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    h4 {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    p {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-normal);
-      line-height: 1.5;
-    }
-
-    label {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    button {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-medium);
-      line-height: 1.5;
-    }
-
-    input {
-      font-size: var(--text-base);
-      font-weight: var(--font-weight-normal);
-      line-height: 1.5;
-    }
-  }
-}
-
-html {
-  font-size: var(--font-size);
-}
-
-/* Emoji rendering - make them look exactly like Google Keyboard/WhatsApp */
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
-/* Force native color emoji rendering */
+/* Emoji rendering - force native emoji */
 @supports (font-variation-settings: normal) {
   * {
     font-synthesis: none;
@@ -201,41 +143,156 @@ body {
 }
 
 /* Custom animations */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
 @keyframes shimmer {
   0% {
-    transform: translateX(-100%);
+    background-position: -1000px 0;
   }
   100% {
-    transform: translateX(100%);
+    background-position: 1000px 0;
   }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }
 
 .animate-shimmer {
-  animation: shimmer 3s infinite;
+  animation: shimmer 2s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 1000px 100%;
 }
 
-/* Mobile-First Responsive Improvements */
+/* Glass morphism effect */
+.glass {
+  @apply backdrop-blur-xl bg-white/20 border border-white/30;
+}
+
+.glass-dark {
+  @apply backdrop-blur-xl bg-black/20 border border-white/10;
+}
+
+/* Smooth transitions */
+@layer components {
+  .transition-all-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 
+           text-white rounded-lg font-semibold hover:shadow-lg transition-all;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg 
+           font-semibold hover:bg-gray-50 transition-all;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 
+           bg-clip-text text-transparent;
+  }
+
+  .card-hover {
+    @apply transform hover:scale-105 transition-all duration-300 hover:shadow-lg;
+  }
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
   /* Touch targets - minimum 44x44px */
-  button, a, [role="button"] {
+  button,
+  a,
+  [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
-  
-  /* Better font rendering on mobile */
-  body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-size: 14px;
-  }
-  
-  /* Prevent zoom on input focus (iOS) */
-  input, textarea, select {
-    font-size: 16px !important;
-  }
-  
-  /* Improve spacing on mobile */
+
+  /* Better spacing on mobile */
   .container {
     @apply px-3 sm:px-4;
   }
+
+  /* Improve readability on small screens */
+  html {
+    font-size: 14px;
+  }
+
+  /* Better form inputs on mobile */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    font-size: 16px;
+    zoom: 1.25;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    @apply px-2;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full hover:bg-gray-500;
+}
+
+.dark ::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 hover:bg-gray-500;
+}
+
+/* Utility classes */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark .text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Ensure all pages use consistent styling */
+html, body, #root {
+  @apply w-full h-full;
 }
