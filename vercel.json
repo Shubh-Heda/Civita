@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build -- --outDir docs",
+  "buildCommand": "npm run build:docs",
   "outputDirectory": "docs",
   "framework": "vite",
   "rewrites": [
