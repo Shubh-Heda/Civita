@@ -62,12 +62,14 @@
             "gh-pages": "^6.3.0",
             "supabase": "^2.70.5",
             "vite": "^6.4.1",
-            "vite-plugin-compression": "^0.5.1"
+            "vite-plugin-compression": "^0.5.1",
+            "cross-env": "^7.0.3"
       },
       "scripts": {
             "dev": "vite",
             "build": "vite build",
-            "build:docs": "vite build --outDir docs",
+            "build:docs": "cross-env VITE_BASE=/Civita/ vite build --outDir docs",
+            "build:docs:local": "cross-env VITE_BASE=/ vite build --outDir docs",
             "deploy:pages": "gh-pages -d docs"
       }
 }
