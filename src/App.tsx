@@ -57,10 +57,11 @@ import { realGroupChatService } from './services/groupChatServiceReal';
 import { modernChatService } from './services/modernChatService';
 import { matchNotificationService } from './services/matchNotificationService';
 import { AuthProvider, useAuth } from './lib/AuthProvider';
+import { supabaseEnabled } from './lib/supabaseClient';
 import { MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
 
-type Page = 'landing' | 'explore' | 'community' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community-feed' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'help' | 'availability' | 'comprehensive-dashboard';
+type Page = 'landing' | 'explore' | 'community' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community-feed' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'match-history' | 'help' | 'availability' | 'comprehensive-dashboard' | 'map-view';
 
 interface UserProfile {
   name: string;
@@ -635,6 +636,10 @@ function AppContent() {
     
     if (user) {
       try {
+        if (!supabaseEnabled) {
+          throw new Error('Supabase unavailable in local dev. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+        }
+
         const { data: createdMatch, error: matchError } = await matchService.addMatch({
           user_id: user.id,
           title: match.title,
@@ -659,8 +664,20 @@ function AppContent() {
           throw new Error(matchError);
         }
 
+        const persistedMatchId = createdMatch?.id || match.id;
+
+        const { error: participantError } = await matchService.addMatchParticipant(
+          persistedMatchId,
+          user.id,
+          'organizer',
+          'joined'
+        );
+
+        if (participantError) {
+          throw new Error(`Failed to add organizer to match: ${participantError}`);
+        }
+
         try {
-          const matchId = createdMatch?.id || match.id;
           const conversation = await modernChatService.createGroupConversation(
             match.title,
             `Meet up for ${match.sport || 'sports'} at ${match.turfName || 'the venue'}`,
@@ -669,10 +686,10 @@ function AppContent() {
             []
           );
           
-          const matchWithChat = { ...match, groupChatId: conversation.id };
+          const matchWithChat = { ...match, id: persistedMatchId, groupChatId: conversation.id };
           matchNotificationService.saveMatchToDiscoverable(matchWithChat);
-          
-          navigateTo('modern-chat');
+
+          navigateTo('modern-chat', undefined, persistedMatchId, undefined, conversation.id);
           console.log('✅ Modern chat conversation created for match:', conversation.id);
           
           await modernChatService.sendMessage(
@@ -683,8 +700,11 @@ function AppContent() {
             'text'
           );
         } catch (chatError) {
-          console.error('Note: Modern chat creation failed:', chatError);
-          navigateTo('modern-chat');
+          console.error('❌ Modern chat creation failed:', chatError);
+          navigateTo('match-history');
+          toast.error('Match saved, but chat setup failed', {
+            description: chatError instanceof Error ? chatError.message : 'Please run the chat DB setup SQL scripts in Supabase.',
+          });
         }
         
         console.log('✅ Match saved to backend:', match.title);
@@ -693,9 +713,9 @@ function AppContent() {
         });
       } catch (error) {
         console.error('❌ Error saving match to backend:', error);
-        navigateTo('modern-chat');
-        toast.info('Match Created! 🎉', {
-          description: 'Chat ready - opening now!',
+        navigateTo('match-history');
+        toast.error('Match save failed', {
+          description: error instanceof Error ? error.message : 'Backend rejected match save.',
         });
       }
     } else {
@@ -1108,6 +1128,7 @@ function AppContent() {
         {currentPage === 'finder' && <MatchFinder onNavigate={navigateTo} onBack={goBack} onMatchJoin={handleMatchJoin} />}
         {currentPage === 'discovery' && <DiscoveryHub onNavigate={navigateTo} onBack={goBack} />}
         {currentPage === 'create-match' && <CreateMatchPlan onNavigate={navigateTo} onBack={goBack} onMatchCreate={handleMatchCreate} />}
+        {currentPage === 'match-history' && <MatchHistory onNavigate={navigateTo} onBack={goBack} userId={user?.id} />}
         {currentPage === 'create-event-booking' && <CreateEventBooking onNavigate={navigateTo} onBack={goBack} onEventBook={handleEventBook} eventDetails={selectedEventDetails} />}
         {currentPage === 'turf-detail' && <TurfDetail onNavigate={navigateTo} onBack={goBack} turfId={selectedTurfId} />}
         {(currentPage === 'chat' || currentPage === 'sports-chat' || currentPage === 'events-chat' || currentPage === 'group-chat' || currentPage === 'dm-chat' || currentPage === 'modern-chat') && (

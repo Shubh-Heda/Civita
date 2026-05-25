@@ -30,6 +30,8 @@ interface CreateMatchPlanProps {
     paymentOption: string;
     amount?: number;
     location?: string;
+    lat?: number;
+    lng?: number;
     minPlayers?: number;
     maxPlayers?: number;
     turfCost?: number;
@@ -45,6 +47,8 @@ const turfs = [
     image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop',
     price: '₹1500/hr',
     rating: 4.8,
+    lat: 23.0225,
+    lng: 72.5714,
   },
   {
     id: '2',
@@ -54,6 +58,8 @@ const turfs = [
     image: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&h=300&fit=crop',
     price: '₹2000/hr',
     rating: 4.7,
+    lat: 23.0330,
+    lng: 72.5797,
   },
   {
     id: '3',
@@ -63,6 +69,8 @@ const turfs = [
     image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop',
     price: '₹800/hr',
     rating: 4.6,
+    lat: 23.0195,
+    lng: 72.5386,
   },
   {
     id: '4',
@@ -72,6 +80,8 @@ const turfs = [
     image: 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=400&h=300&fit=crop',
     price: '₹1800/hr',
     rating: 4.9,
+    lat: 23.0145,
+    lng: 72.5619,
   },
   {
     id: '5',
@@ -81,6 +91,8 @@ const turfs = [
     image: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=400&h=300&fit=crop',
     price: '₹1700/hr',
     rating: 4.5,
+    lat: 23.1815,
+    lng: 72.6267,
   },
   {
     id: '6',
@@ -90,6 +102,8 @@ const turfs = [
     image: 'https://images.unsplash.com/photo-1519766304817-4f37bda74a26?w=400&h=300&fit=crop',
     price: '₹1000/hr',
     rating: 4.7,
+    lat: 23.0288,
+    lng: 72.4953,
   },
 ];
 
@@ -177,6 +191,8 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
       paymentOption: paymentMethod === 'direct' ? 'Pay Directly' : 'split',
       amount: getTurfCost(),
       location: selectedTurf?.location || '',
+      lat: selectedTurf?.lat || 23.0225,
+      lng: selectedTurf?.lng || 72.5714,
       minPlayers: parseInt(minPlayers),
       maxPlayers: parseInt(maxPlayers),
       turfCost: getTurfCost(),
