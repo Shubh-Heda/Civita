@@ -141,22 +141,7 @@ class ModerChatService {
         });
 
       if (convError) {
-        console.warn('⚠️ Supabase conversation insert failed, using mock data:', convError.message);
-        // Return mock conversation instead of throwing
-        return {
-          id: conversationId,
-          type: 'direct',
-          name: userName2,
-          members: [
-            { user_id: userId1, name: userName1, role: 'member', joined_at: new Date().toISOString(), is_online: true },
-            { user_id: userId2, name: userName2, role: 'member', joined_at: new Date().toISOString(), is_online: true },
-          ],
-          unread_count: 0,
-          is_archived: false,
-          is_muted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+        throw new Error(`Direct conversation insert failed: ${convError.message}`);
       }
 
       // Add members
@@ -178,43 +163,13 @@ class ModerChatService {
       ]);
 
       if (membersError) {
-        console.warn('⚠️ Supabase members insert failed, returning mock conversation:', membersError.message);
-        // Return mock conversation anyway
-        return {
-          id: conversationId,
-          type: 'direct',
-          name: userName2,
-          members: [
-            { user_id: userId1, name: userName1, role: 'member', joined_at: new Date().toISOString(), is_online: true },
-            { user_id: userId2, name: userName2, role: 'member', joined_at: new Date().toISOString(), is_online: true },
-          ],
-          unread_count: 0,
-          is_archived: false,
-          is_muted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+        throw new Error(`Direct conversation members insert failed: ${membersError.message}`);
       }
 
       return await this.getConversation(conversationId);
     } catch (error) {
       console.error('❌ Error creating direct conversation:', error);
-      // Return mock conversation as fallback
-      const conversationId = crypto.randomUUID();
-      return {
-        id: conversationId,
-        type: 'direct',
-        name: userName2,
-        members: [
-          { user_id: userId1, name: userName1, role: 'member', joined_at: new Date().toISOString(), is_online: true },
-          { user_id: userId2, name: userName2, role: 'member', joined_at: new Date().toISOString(), is_online: true },
-        ],
-        unread_count: 0,
-        is_archived: false,
-        is_muted: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      throw error;
     }
   }
 
@@ -266,23 +221,7 @@ class ModerChatService {
         });
 
       if (convError) {
-        console.warn('⚠️ Supabase group conversation insert failed, using mock data:', convError.message);
-        // Return mock conversation instead of throwing
-        return {
-          id: conversationId,
-          type: 'group',
-          name,
-          description,
-          members: [
-            { user_id: creatorId, name: creatorName, role: 'admin', joined_at: new Date().toISOString(), is_online: true },
-            ...memberIds.map(id => ({ user_id: id, name: 'User', role: 'member' as const, joined_at: new Date().toISOString(), is_online: true })),
-          ],
-          unread_count: 0,
-          is_archived: false,
-          is_muted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+        throw new Error(`Group conversation insert failed: ${convError.message}`);
       }
 
       // Add creator as admin
@@ -295,23 +234,7 @@ class ModerChatService {
       });
 
       if (creatorError) {
-        console.warn('⚠️ Supabase creator member insert failed, using mock data:', creatorError.message);
-        // Return mock conversation anyway
-        return {
-          id: conversationId,
-          type: 'group',
-          name,
-          description,
-          members: [
-            { user_id: creatorId, name: creatorName, role: 'admin', joined_at: new Date().toISOString(), is_online: true },
-            ...memberIds.map(id => ({ user_id: id, name: 'User', role: 'member' as const, joined_at: new Date().toISOString(), is_online: true })),
-          ],
-          unread_count: 0,
-          is_archived: false,
-          is_muted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+        throw new Error(`Group creator member insert failed: ${creatorError.message}`);
       }
 
       // Add other members
@@ -326,51 +249,14 @@ class ModerChatService {
 
         const { error: membersError } = await supabase.from('conversation_members').insert(memberData);
         if (membersError) {
-          console.warn('⚠️ Supabase members insert failed, but conversation created. Using mock members:', membersError.message);
-          // Still return the conversation even if members insert failed
+          throw new Error(`Group members insert failed: ${membersError.message}`);
         }
       }
 
-      // Try to get conversation, but return mock if it fails
-      try {
-        return await this.getConversation(conversationId);
-      } catch (getError) {
-        console.warn('⚠️ Could not retrieve created conversation from Supabase, returning mock data:', getError);
-        return {
-          id: conversationId,
-          type: 'group',
-          name,
-          description,
-          members: [
-            { user_id: creatorId, name: creatorName, role: 'admin', joined_at: new Date().toISOString(), is_online: true },
-            ...memberIds.map(id => ({ user_id: id, name: 'User', role: 'member' as const, joined_at: new Date().toISOString(), is_online: true })),
-          ],
-          unread_count: 0,
-          is_archived: false,
-          is_muted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      }
+      return await this.getConversation(conversationId);
     } catch (error) {
       console.error('❌ Error creating group conversation:', error);
-      // Return mock conversation as fallback
-      const conversationId = crypto.randomUUID();
-      return {
-        id: conversationId,
-        type: 'group',
-        name,
-        description,
-        members: [
-          { user_id: creatorId, name: creatorName, role: 'admin', joined_at: new Date().toISOString(), is_online: true },
-          ...memberIds.map(id => ({ user_id: id, name: 'User', role: 'member' as const, joined_at: new Date().toISOString(), is_online: true })),
-        ],
-        unread_count: 0,
-        is_archived: false,
-        is_muted: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      throw error;
     }
   }
 

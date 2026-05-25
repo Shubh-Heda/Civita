@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build -- --base=/Avento/ --outDir docs",
+  "buildCommand": "npm run build -- --outDir docs",
   "outputDirectory": "docs",
   "framework": "vite",
   "rewrites": [
