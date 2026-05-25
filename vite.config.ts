@@ -4,7 +4,7 @@ import path from 'path';
 import compression from 'vite-plugin-compression';
 
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/Avento/' : '/',
+  base: command === 'build' ? '/Civita/' : '/',
   plugins: [
     react(),
     // Enable gzip compression for CDN delivery
