@@ -4,8 +4,7 @@
 // ============================================
 
 import { supabase } from '../lib/supabase';
-import { firebaseAuth } from './firebaseService';
-
+import { supabaseAuth } from '../services/supabaseAuthService'
 export interface MemoryLike {
   id: string;
   memory_id: string;
@@ -47,7 +46,7 @@ class MemoryService {
   
   async likeMemory(memoryId: string): Promise<boolean> {
     try {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!user) return false;
 
       const { error } = await supabase
@@ -67,7 +66,7 @@ class MemoryService {
 
   async unlikeMemory(memoryId: string): Promise<boolean> {
     try {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!user) return false;
 
       const { error } = await supabase
@@ -102,7 +101,7 @@ class MemoryService {
 
   async checkIfLiked(memoryId: string): Promise<boolean> {
     try {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!user) return false;
 
       const { data, error } = await supabase
@@ -122,7 +121,7 @@ class MemoryService {
 
   async addComment(memoryId: string, content: string): Promise<MemoryComment | null> {
     try {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!user) return null;
 
       const { data, error } = await supabase
@@ -175,7 +174,7 @@ class MemoryService {
 
   async deleteComment(commentId: string): Promise<boolean> {
     try {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!user) return false;
 
       const { error } = await supabase
@@ -196,7 +195,7 @@ class MemoryService {
 
   async shareMemory(memoryId: string, sharedTo?: string): Promise<boolean> {
     try {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       if (!user) return false;
 
       const { error } = await supabase
@@ -235,7 +234,7 @@ class MemoryService {
 
   async getMemoryStats(memoryId: string): Promise<MemoryStats> {
     try {
-      const user = firebaseAuth.getCurrentUser();
+      const user = await supabaseAuth.getCurrentUser();
       
       // Get counts
       const [likes, comments, shares] = await Promise.all([

@@ -2,8 +2,7 @@
 // Trust Score Service - Reliability & Behavior Tracking
 // ============================================
 import { supabase } from '../lib/supabase';
-import { firebaseAuth } from './firebaseService';
-
+import { supabaseAuth } from '../services/supabaseAuthService'
 // Types
 export interface TrustScore {
   id: string;
@@ -262,7 +261,7 @@ class TrustScoreService {
     comment?: string;
     is_anonymous?: boolean;
   }): Promise<void> {
-    const user = firebaseAuth.getCurrentUser();
+    const user = supabaseAuth.getCurrentUser();
     if (!user) throw new Error('Not authenticated');
 
     const { error } = await supabase
@@ -428,7 +427,7 @@ class TrustScoreService {
   // ==================== REPORTING ====================
 
   async reportUser(reportedUserId: string, reason: string, description: string, matchId?: string): Promise<void> {
-    const user = firebaseAuth.getCurrentUser();
+    const user = await supabaseAuth.getCurrentUser();
     if (!user) throw new Error('Not authenticated');
 
     const { error } = await supabase

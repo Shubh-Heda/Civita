@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { matchNotificationService } from '../services/matchNotificationService';
 import { realGroupChatService } from '../services/groupChatServiceReal';
-import { firebaseAuth } from '../services/firebaseService';
+import { supabaseAuth } from '../services/supabaseAuthService'
 import { toast } from 'sonner';
 import './DiscoveryHub.css';
 

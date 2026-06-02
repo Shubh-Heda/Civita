@@ -11,7 +11,7 @@ import { Badge } from './ui/badge';
 import { gamingBackendService, GamingSession } from '../services/gamingBackendService';
 import { GamingClub } from '../services/gamingService';
 import { matchService } from '../services/backendService';
-import { firebaseAuth } from '../services/firebaseService';
+import { supabaseAuth } from '../services/supabaseAuthService'
 import { toast } from 'sonner';
 
 interface CreateGamingSessionModalProps {
@@ -87,11 +87,11 @@ export function CreateGamingSessionModal({
 
       // Also save to matchService for cross-compatibility
       try {
-        const user = firebaseAuth.getCurrentUser();
+        const user = supabaseAuth.getCurrentUser();
         
         if (user) {
           await matchService.createMatch({
-            user_id: user.uid,
+            user_id: user.id,
             title: `${sessionData.gameName || 'Gaming'} Session at ${selectedClub.name}`,
             turf_name: selectedClub.name,
             date: sessionData.date,

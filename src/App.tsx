@@ -4,9 +4,9 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Eagerly load critical components from pages subfolder
 import { Navigation } from './components/Navigation';
-import { LandingPage } from './components/pages/LandingPage';
-import { ExplorePage } from './components/pages/Explore';
-import { CommunityPage } from './components/pages/Community';
+import { LandingPage } from './pages/LandingPage';
+import { ExplorePage } from './pages/ExplorePage';
+import { CommunityPage } from './pages/CommunityPage';
 import { AuthPage } from './components/AuthPage';
 import { OnboardingForm } from './components/OnboardingForm';
 import { ThemeProvider } from './components/ThemeProvider';

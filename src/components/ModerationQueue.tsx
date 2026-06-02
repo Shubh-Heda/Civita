@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { firebaseAuth } from '../services/firebaseService';
+import { supabaseAuth } from '../services/supabaseAuthService'
 import type { ChatMessageReport } from '../services/chatService';
 import { X, Check, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -38,7 +38,7 @@ export function ModerationQueue() {
       const report = reports.find(r => r.id === reportId);
       if (!report) return;
 
-      const currentUser = firebaseAuth.getCurrentUser();
+      const currentUser = supabaseAuth.getCurrentUser();
       if (!currentUser) return;
 
       // Update report status in localStorage

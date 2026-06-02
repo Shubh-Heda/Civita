@@ -1,5 +1,5 @@
 // Discovery Service - Using Firebase  
-import { firebaseAuth } from './firebaseService';
+import { supabaseAuth } from '../services/supabaseAuthService'
 import { toast } from 'sonner';
 
 export interface PresencePoint {

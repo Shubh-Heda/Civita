@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { enhancedGroupChatService } from '../../services/enhancedGroupChatService';
 import { directMessageBackend } from '../../services/directMessageBackend';
-import { firebaseAuth, usersService } from '../../services/firebaseService';
+import { supabaseAuth, usersService } from '../../services/supabaseAuthService';
 import { realGroupChatService } from '../../services/groupChatServiceReal';
 import { Send, Phone, Video, Search, MoreVertical, Paperclip, Plus, X, MessageSquarePlus, Users } from 'lucide-react';
 import { toast } from 'sonner';
@@ -64,7 +64,7 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const user = await firebaseAuth.getCurrentUser();
+        const user = await supabaseAuth.getCurrentUser();
         if (user) {
           const { data: userProfile } = await usersService.getUserProfile(user.id);
           setCurrentUser({
@@ -88,7 +88,7 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
     const loadConversations = async () => {
       try {
         setLoading(true);
-        const user = await firebaseAuth.getCurrentUser();
+        const user = await supabaseAuth.getCurrentUser();
         if (!user) return;
 
         // Load 1-1 conversations with real user data
@@ -185,7 +185,7 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
 
     const loadMessages = async () => {
       try {
-        const user = await firebaseAuth.getCurrentUser();
+        const user = await supabaseAuth.getCurrentUser();
         if (!user) return;
 
         if (selectedChat.type === 'direct') {

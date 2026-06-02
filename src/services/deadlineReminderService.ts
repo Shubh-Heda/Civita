@@ -8,7 +8,7 @@
  */
 
 // Deadline Reminder Service - Using Firebase
-import { firebaseAuth } from './firebaseService';
+import { supabaseAuth } from '../services/supabaseAuthService'
 import { notificationService } from './notificationService';
 
 export interface DeadlineReminder {

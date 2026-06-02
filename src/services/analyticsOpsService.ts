@@ -1,6 +1,14 @@
-﻿// ============================================
-// Analytics & Ops Service - Using Firebase
-// ============================================
-// All implementation is in analyticsOpsServiceStub.ts
-export * from './analyticsOpsServiceStub';
-export { analyticsOpsService, analyticsOpsService as default } from './analyticsOpsServiceStub';
+import analyticsOpsServiceDefault, { analyticsOpsService as _analyticsOpsService } from './analyticsOpsServiceStub';
+
+// Minimal AnalyticsCard type expected by UI components
+export interface AnalyticsCard {
+  title: string;
+  value?: string | number;
+  trend?: 'up' | 'down' | 'flat' | null;
+  delta?: string | number;
+  helper?: string;
+}
+
+// Re-export the stubbed service under the expected name
+export const analyticsOpsService = _analyticsOpsService ?? analyticsOpsServiceDefault;
+export default analyticsOpsService;
