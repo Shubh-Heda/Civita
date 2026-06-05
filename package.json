@@ -70,8 +70,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:docs": "cross-env VITE_BASE=/CIVITA/ vite build --outDir docs",
-    "build:docs:local": "cross-env VITE_BASE=/CIVITA/ vite build --outDir docs",
+    "build:docs": "cross-env VITE_BASE=/Civita/ vite build --outDir docs",
+    "build:docs:local": "cross-env VITE_BASE=/Civita/ vite build --outDir docs",
     "deploy:pages": "gh-pages -d docs"
   }
 }

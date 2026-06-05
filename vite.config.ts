@@ -5,7 +5,7 @@ import compression from 'vite-plugin-compression';
 
 export default defineConfig(({ command }) => ({
   // Allow overriding the base path via VITE_BASE env var (useful for Pages vs Vercel)
-  base: process.env.VITE_BASE ?? (command === 'build' ? '/CIVITA/' : '/'),
+  base: process.env.VITE_BASE ?? (command === 'build' ? '/Civita/' : '/'),
   plugins: [
     react(),
     // Enable gzip compression for CDN delivery
