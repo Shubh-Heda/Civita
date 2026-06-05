@@ -231,12 +231,12 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden relative"
       >
         {/* Close Button */}
         <button
           onClick={handleSkip}
-          className="absolute top-4 right-4 z-10 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-colors"
+          className="absolute top-4 right-4 z-20 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-colors"
         >
           <X className="w-5 h-5 text-slate-700" />
         </button>
@@ -251,40 +251,39 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
             transition={{ duration: 0.3 }}
             className="relative"
           >
-            {/* Hero Image or Icon */}
-            {currentStepData.image ? (
-              <div className="relative h-64 overflow-hidden">
+            {/* Hero Section with Gradient */}
+            <div className={`relative h-56 bg-gradient-to-br ${currentStepData.color} flex items-center justify-center overflow-hidden`}>
+              {currentStepData.image ? (
                 <img 
                   src={currentStepData.image} 
                   alt={currentStepData.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover opacity-40"
                 />
-                <div className={`absolute inset-0 bg-gradient-to-br ${currentStepData.color} opacity-60`} />
-              </div>
-            ) : (
-              <div className={`relative h-48 bg-gradient-to-br ${currentStepData.color} flex items-center justify-center`}>
-                <currentStepData.icon className="w-24 h-24 text-white/90" />
-              </div>
-            )}
+              ) : null}
+              <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent" />
+              <currentStepData.icon className="relative z-10 w-20 h-20 text-white/95 drop-shadow-lg" />
+            </div>
 
             {/* Content */}
             <div className="p-8">
-              <h2 className="mb-4 text-slate-900">{currentStepData.title}</h2>
-              <p className="text-slate-600 text-lg mb-6 leading-relaxed">
-                {currentStepData.description}
-              </p>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 mb-3">{currentStepData.title}</h2>
+                <p className="text-slate-600 text-base leading-relaxed">
+                  {currentStepData.description}
+                </p>
+              </div>
 
               {/* Tips */}
               {currentStepData.tips && (
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 mb-6">
-                  <p className="text-slate-800 font-semibold mb-3 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-600" />
-                    Pro Tips:
+                <div className="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100">
+                  <p className="text-slate-800 font-semibold mb-3 flex items-center gap-2 text-sm">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    Pro Tips
                   </p>
                   <ul className="space-y-2">
                     {currentStepData.tips.map((tip, index) => (
-                      <li key={index} className="flex items-start gap-2 text-slate-600">
-                        <span className="text-purple-600 mt-1">•</span>
+                      <li key={index} className="flex items-start gap-3 text-slate-600 text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-600 mt-2 flex-shrink-0" />
                         <span>{tip}</span>
                       </li>
                     ))}
@@ -300,22 +299,22 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
                       handleSkip();
                       // Navigate to browse/find page
                     }}
-                    className={`bg-gradient-to-r ${currentStepData.color} text-white rounded-xl p-6 text-left hover:shadow-xl transition-all transform hover:scale-105`}
+                    className={`bg-gradient-to-r ${currentStepData.color} text-white rounded-xl p-5 text-left hover:shadow-lg transition-all hover:scale-[1.02]`}
                   >
-                    <div className="text-2xl mb-2">🔍</div>
-                    <p className="font-semibold mb-1">Find Matches</p>
-                    <p className="text-sm text-white/80">Browse available options</p>
+                    <div className="text-xl mb-1">🔍</div>
+                    <p className="font-semibold text-sm mb-1">Find Matches</p>
+                    <p className="text-xs text-white/80">Browse available options</p>
                   </button>
                   <button
                     onClick={() => {
                       handleSkip();
                       // Navigate to create page
                     }}
-                    className="bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-xl p-6 text-left hover:shadow-xl transition-all transform hover:scale-105"
+                    className="bg-slate-800 text-white rounded-xl p-5 text-left hover:bg-slate-900 hover:shadow-lg transition-all hover:scale-[1.02]"
                   >
-                    <div className="text-2xl mb-2">✨</div>
-                    <p className="font-semibold mb-1">Create New</p>
-                    <p className="text-sm text-white/80">Start your own</p>
+                    <div className="text-xl mb-1">✨</div>
+                    <p className="font-semibold text-sm mb-1">Create New</p>
+                    <p className="text-xs text-white/70">Start your own</p>
                   </button>
                 </div>
               )}
@@ -326,10 +325,10 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
                   <button
                     key={index}
                     onClick={() => setCurrentStep(index)}
-                    className={`h-2 rounded-full transition-all ${
+                    className={`h-1.5 rounded-full transition-all ${
                       index === currentStep 
-                        ? `w-8 bg-gradient-to-r ${currentStepData.color}` 
-                        : 'w-2 bg-slate-300 hover:bg-slate-400'
+                        ? `w-6 bg-gradient-to-r ${currentStepData.color}` 
+                        : 'w-1.5 bg-slate-200 hover:bg-slate-300'
                     }`}
                   />
                 ))}
@@ -341,7 +340,7 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
                   onClick={handlePrevious}
                   disabled={currentStep === 0}
                   variant="outline"
-                  className="gap-2"
+                  className="gap-2 text-slate-600 border-slate-300 hover:bg-slate-50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Previous
@@ -349,14 +348,14 @@ export function FirstTimeUserGuide({ onClose, category = 'sports' }: FirstTimeUs
 
                 <button
                   onClick={handleSkip}
-                  className="text-slate-500 hover:text-slate-700 text-sm font-medium"
+                  className="text-slate-500 hover:text-slate-700 text-sm font-medium transition-colors"
                 >
-                  Skip Tutorial
+                  Skip
                 </button>
 
                 <Button
                   onClick={handleNext}
-                  className={`gap-2 bg-gradient-to-r ${currentStepData.color} hover:opacity-90 text-white`}
+                  className={`gap-2 bg-gradient-to-r ${currentStepData.color} hover:opacity-90 text-white shadow-md`}
                 >
                   {currentStep === steps.length - 1 ? "Get Started" : "Next"}
                   <ChevronRight className="w-4 h-4" />

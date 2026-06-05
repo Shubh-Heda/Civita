@@ -656,3 +656,5 @@ export const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedConversation
     </div>
   );
 };
+
+export default WhatsAppChat;

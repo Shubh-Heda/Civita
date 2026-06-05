@@ -99,7 +99,6 @@ function AppContent() {
   const [selectedGroupChatId, setSelectedGroupChatId] = useState<string | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
-  const [showLocationRequest, setShowLocationRequest] = useState(false);
   const [chatGroups, setChatGroups] = useState<{[key: string]: string}>({});
   const [currentCategory, setCurrentCategory] = useState<'sports' | 'events' | 'gaming'>('sports');
   const [selectedEventDetails, setSelectedEventDetails] = useState<any>(null);
@@ -347,16 +346,61 @@ function AppContent() {
     setCurrentPage('auth');
   }, []);
 
+  const requestNativeLocation = useCallback(() => {
+    if (navigator.geolocation) {
+      toast.loading('Getting your location...', { id: 'location-loading' });
+      
+      // This triggers the native top-left browser popup
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const locationData = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          
+          setLocationPermissionGranted(true);
+          setUserLocation(locationData);
+          localStorage.setItem('userLocation', JSON.stringify(locationData));
+          localStorage.setItem('locationSource', 'gps');
+          
+          toast.dismiss('location-loading');
+          toast.success('Location access granted! 📍', {
+            description: 'We can now show you nearby experiences.',
+          });
+        },
+        (error) => {
+          toast.dismiss('location-loading');
+          
+          const defaultLocation = { latitude: 23.0225, longitude: 72.5714 };
+          setUserLocation(defaultLocation);
+          localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
+          localStorage.setItem('locationSource', 'default');
+          
+          toast.success('Location set to Ahmedabad 📍', {
+            description: 'Using Ahmedabad as default location. You can still use all features!',
+          });
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      const defaultLocation = { latitude: 23.0225, longitude: 72.5714 };
+      setUserLocation(defaultLocation);
+      localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
+      localStorage.setItem('locationSource', 'default');
+      toast.success('Location set to Ahmedabad 📍', {
+        description: 'Geolocation not supported. Using default location.',
+      });
+    }
+  }, []);
+
   const handleCategorySelectFromLanding = useCallback((category: 'sports' | 'events' | 'parties' | 'gaming') => {
     console.log('🎮 LANDING PAGE - Category selected:', category);
     
     if (category === 'gaming') {
       if (!user) {
-        console.log('🎮 User not logged in - setting pending category to gaming');
         setPendingCategory('gaming');
         setCurrentPage('auth');
       } else {
-        console.log('🎮 User logged in - going directly to gaming-hub');
         setCurrentCategory('gaming');
         setCurrentPage('gaming-hub');
         setPendingCategory(null);
@@ -370,179 +414,38 @@ function AppContent() {
     if (!user) {
       setCurrentPage('auth');
     } else {
-      if (locationPermissionGranted) {
-        if (category === 'sports') {
-          setCurrentPage('dashboard');
-        } else if (category === 'events') {
-          setCurrentPage('events-dashboard');
-        }
-        setPendingCategory(null);
-      } else {
-        setShowLocationRequest(true);
+      // DIRECT ROUTING: Skip custom location page, go straight to dashboard
+      if (category === 'sports') {
+        setCurrentPage('dashboard');
+      } else if (category === 'events' || category === 'parties') {
+        setCurrentPage('events-dashboard');
       }
+      // Trigger native popup
+      requestNativeLocation();
+      setPendingCategory(null);
     }
-  }, [user, locationPermissionGranted]);
+  }, [user, requestNativeLocation]);
 
   const handleAuthSuccess = useCallback(() => {
     console.log('🎮 Auth successful! Pending category:', pendingCategory);
     
     if (pendingCategory === 'gaming') {
-      console.log('🎮 Going to gaming hub after auth');
       setCurrentPage('gaming-hub');
       setPendingCategory(null);
       return;
     }
     
-    setShowLocationRequest(true);
-  }, [pendingCategory]);
-
-  const handleLocationPermission = useCallback(() => {
-    if (navigator.geolocation) {
-      toast.loading('Getting your location...', { id: 'location-loading' });
-      
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const locationData = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          
-          setLocationPermissionGranted(true);
-          setShowLocationRequest(false);
-          setUserLocation(locationData);
-          
-          localStorage.setItem('userLocation', JSON.stringify(locationData));
-          localStorage.setItem('locationSource', 'gps');
-          
-          console.log('User location captured:', locationData);
-          
-          toast.dismiss('location-loading');
-          
-          toast.success('Location access granted! 📍', {
-            description: 'We can now show you nearby experiences.',
-          });
-          
-          if (pendingCategory === 'sports') {
-            setCurrentCategory('sports');
-            setCurrentPage('dashboard');
-          } else if (pendingCategory === 'events') {
-            setCurrentCategory('events');
-            setCurrentPage('events-dashboard');
-          } else if (pendingCategory === 'parties') {
-            setCurrentCategory('parties');
-            setCurrentPage('events-dashboard');
-          }
-          
-          setPendingCategory(null);
-        },
-        (error) => {
-          toast.dismiss('location-loading');
-          
-          const defaultLocation = {
-            latitude: 23.0225,
-            longitude: 72.5714,
-          };
-          
-          setUserLocation(defaultLocation);
-          localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-          localStorage.setItem('locationSource', 'default');
-          
-          let errorMessage = 'Using Ahmedabad as your default location. You can still use all features!';
-          
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              console.log('Location permission denied - using default location (Ahmedabad)');
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location unavailable. Using Ahmedabad as default.';
-              console.log('Location position unavailable - using default location');
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out. Using Ahmedabad as default.';
-              console.log('Location request timeout - using default location');
-              break;
-            default:
-              console.log('Location error - using default location:', error);
-          }
-          
-          toast.success('Location set to Ahmedabad 📍', {
-            description: errorMessage,
-          });
-          setShowLocationRequest(false);
-          
-          if (pendingCategory === 'sports') {
-            setCurrentCategory('sports');
-            setCurrentPage('dashboard');
-          } else if (pendingCategory === 'events') {
-            setCurrentCategory('events');
-            setCurrentPage('events-dashboard');
-          } else if (pendingCategory === 'parties') {
-            setCurrentCategory('parties');
-            setCurrentPage('events-dashboard');
-          }
-          
-          setPendingCategory(null);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      const defaultLocation = {
-        latitude: 23.0225,
-        longitude: 72.5714,
-      };
-      
-      setUserLocation(defaultLocation);
-      localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-      localStorage.setItem('locationSource', 'default');
-      
-      toast.success('Location set to Ahmedabad 📍', {
-        description: 'Geolocation not supported. Using default location.',
-      });
-      setShowLocationRequest(false);
-      
-      if (pendingCategory === 'sports') {
-        setCurrentCategory('sports');
-        setCurrentPage('dashboard');
-      } else if (pendingCategory === 'events') {
-        setCurrentCategory('events');
-        setCurrentPage('events-dashboard');
-      } else if (pendingCategory === 'parties') {
-        setCurrentCategory('parties');
-        setCurrentPage('events-dashboard');
-      }
-      
-      setPendingCategory(null);
-    }
-  }, [pendingCategory]);
-
-  const handleSkipLocation = useCallback(() => {
-    const defaultLocation = {
-      latitude: 23.0225,
-      longitude: 72.5714,
-    };
-    
-    setUserLocation(defaultLocation);
-    localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-    localStorage.setItem('locationSource', 'skipped');
-    
-    console.log('Location skipped - using default location (Ahmedabad)');
-    
-    setShowLocationRequest(false);
-    
-    if (pendingCategory === 'sports') {
-      setCurrentCategory('sports');
-      setCurrentPage('dashboard');
-    } else if (pendingCategory === 'events') {
-      setCurrentCategory('events');
+    // DIRECT ROUTING: Skip custom location page, go straight to dashboard
+    if (pendingCategory === 'events' || pendingCategory === 'parties') {
       setCurrentPage('events-dashboard');
+    } else {
+      setCurrentPage('dashboard');
     }
     
+    // Trigger native popup
+    requestNativeLocation();
     setPendingCategory(null);
-  }, [pendingCategory]);
+  }, [pendingCategory, requestNativeLocation]);
 
   const handleSportsProfileUpdate = useCallback(async (updatedProfile: UserProfile) => {
     setSportsProfile(updatedProfile);
@@ -936,7 +839,7 @@ function AppContent() {
     return (
       <div className="min-h-screen flex flex-col">
         <Toaster position="top-center" richColors />
-        <Navigation currentPage="landing" onNavigate={navigateTo} onGetStarted={handleGetStarted} />
+        <Navigation currentPage="landing" onNavigate={navigateTo} />
         <div className="flex-grow">
           <LandingPage onGetStarted={handleGetStarted} onCategorySelect={handleCategorySelectFromLanding} />
         </div>
@@ -950,7 +853,7 @@ function AppContent() {
     return (
       <div className="min-h-screen flex flex-col">
         <Toaster position="top-center" richColors />
-        <Navigation currentPage="explore" onNavigate={navigateTo} onGetStarted={handleGetStarted} />
+        <Navigation currentPage="explore" onNavigate={navigateTo} />
         <div className="flex-grow">
           <ExplorePage />
         </div>
@@ -964,7 +867,7 @@ function AppContent() {
     return (
       <div className="min-h-screen flex flex-col">
         <Toaster position="top-center" richColors />
-        <Navigation currentPage="community" onNavigate={navigateTo} onGetStarted={handleGetStarted} />
+        <Navigation currentPage="community" onNavigate={navigateTo} />
         <div className="flex-grow">
           <CommunityPage />
         </div>
@@ -1000,97 +903,6 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" richColors />
-      
-      {/* Location Permission Modal */}
-      {showLocationRequest && (
-        <div className="fixed inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[70]">
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ type: "spring", duration: 0.5 }}
-            className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl border border-white/20"
-          >
-            {/* Animated Icon */}
-            <motion.div 
-              className="w-20 h-20 bg-gradient-to-br from-cyan-500 via-blue-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
-              animate={{ 
-                scale: [1, 1.05, 1],
-              }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </motion.div>
-            
-            <h2 className="mb-3 bg-gradient-to-r from-cyan-600 via-blue-600 to-emerald-600 bg-clip-text text-transparent">
-              Enable Location Access
-            </h2>
-            
-            <p className="text-slate-600 mb-6 leading-relaxed">
-              Discover nearby matches, turfs, and events tailored to your location. Connect with local players and never miss out on games close to you! 🎯
-            </p>
-            
-            {/* Benefits List */}
-            <div className="bg-gradient-to-br from-cyan-50 to-emerald-50 rounded-2xl p-5 mb-6 text-left border border-cyan-100">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm text-slate-700">Find turfs & matches nearby</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm text-slate-700">Connect with local players</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm text-slate-700">Personalized recommendations</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={handleSkipLocation}
-                className="flex-1 px-5 py-3.5 border-2 border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-700"
-              >
-                Skip for Now
-              </button>
-              <button
-                onClick={handleLocationPermission}
-                className="flex-1 px-5 py-3.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-500 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Allow Access
-              </button>
-            </div>
-            
-            <p className="text-xs text-slate-500 mt-4">
-              We respect your privacy. Location data is only used to enhance your experience.
-            </p>
-          </motion.div>
-        </div>
-      )}
       
       <Suspense fallback={
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">

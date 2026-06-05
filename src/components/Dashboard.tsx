@@ -1,22 +1,19 @@
-import { useState, useEffect } from 'react';
-import { Search, Filter, Users, Heart, Sparkles, User, MessageCircle, MessageSquarePlus, Calendar, TrendingUp, Star, MapPin, Shield, GraduationCap, Award, HelpCircle, CreditCard, Map, Trophy, Camera, Video, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion'; 
+import { 
+  Users, Heart, Sparkles, MessageCircle, 
+  Calendar, TrendingUp, Star, MapPin, Shield, GraduationCap, 
+  Award, CreditCard, Trophy, ArrowLeft 
+} from 'lucide-react';
 import { Button } from './ui/button';
-import { AventoLogo } from './AventoLogo';
-import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { AnimatedBackground } from './AnimatedBackground';
 import { PaymentNotification } from './PaymentNotification';
 import { PaymentModal } from './PaymentModal';
 import { EmptyState } from './EmptyState';
-import { GlobalSearch } from './GlobalSearch';
-import { NotificationInbox } from './NotificationInbox';
 import { MatchCountdownTimer } from './MatchCountdownTimer';
-import { MatchCardSkeleton } from './LoadingSkeleton';
-import { MenuDropdown } from './MenuDropdown';
-import { FirstTimeUserGuide } from './FirstTimeUserGuide';
 
-const sportsHeroImage = 'https://images.unsplash.com/photo-1509077613385-f89402467146?q=80&w=1940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+const sportsHeroImage = 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1080&q=80';
 
 interface Match {
   id: string;
@@ -38,29 +35,26 @@ interface UserProfile {
   interests: string[];
   location: string;
   joinDate: string;
+  avatarUrl?: string; 
 }
 
+type NavigationPages = 
+  | 'dashboard' | 'profile' | 'community' | 'sports-community' 
+  | 'reflection' | 'finder' | 'discovery' | 'create-match' 
+  | 'turf-detail' | 'sports-chat' | 'help' | 'availability' 
+  | 'landing' | 'comprehensive-dashboard' | 'match-history' | 'modern-chat' | 'chat' | 'sports-events';
+
 interface DashboardProps {
-  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'sports-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'turf-detail' | 'sports-chat' | 'help' | 'availability' | 'landing' | 'comprehensive-dashboard' | 'match-history', turfId?: string, matchId?: string) => void;
+  onNavigate: (page: NavigationPages, turfId?: string, matchId?: string) => void;
   userProfile: UserProfile;
   matches: Match[];
 }
 
-export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) {
+export function Dashboard({ onNavigate, userProfile, matches = [] }: DashboardProps) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(false);
-  
-  // Get only upcoming matches
-  const upcomingMatches = matches.filter(m => m.status === 'upcoming');
 
-  // Check if user is new (first time visiting)
-  useEffect(() => {
-    const hasSeenGuide = localStorage.getItem('civta_sports_guide_completed');
-    if (!hasSeenGuide) {
-      setShowFirstTimeGuide(true);
-    }
-  }, []);
+  const upcomingMatches = matches.filter(m => m.status === 'upcoming');
 
   const handlePayNow = (match: Match) => {
     setSelectedMatch(match);
@@ -68,26 +62,37 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* First Time User Guide */}
-      {showFirstTimeGuide && (
-        <FirstTimeUserGuide 
-          onClose={() => setShowFirstTimeGuide(false)}
-          category="sports"
-        />
-      )}
-      {/* STUNNING Background Image - Friends playing sports together */}
+    <div className="min-h-screen relative bg-[#cadcb9] p-4 sm:p-6 lg:p-12 overflow-x-hidden">
+      
+      {/* 1. Mowed Lawn Grass Texture & Alternating Turf Stripes */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${sportsHeroImage})` }}
-      ></div>
-      
-      {/* Minimal light overlay for contrast and readability - Background DOMINATES */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-cyan-50/20 to-emerald-50/25"></div>
-      
-      {/* Content */}
+        className="absolute inset-0 opacity-[0.4] pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(90deg, #cadcb9, #cadcb9 60px, #c2d5b0 60px, #c2d5b0 120px),
+            radial-gradient(circle at 100% 100%, rgba(255,255,255,0.08) 1px, transparent 1px)
+          `,
+          backgroundSize: '120px 100%, 8px 8px'
+        }}
+      />
+
+      {/* 2. Outer Court Boundaries */}
+      <div className="absolute inset-6 sm:inset-8 lg:inset-12 pointer-events-none border-[3px] border-white/80 shadow-[0_0_15px_rgba(255,255,255,0.1)]" aria-hidden="true">
+        <div className="absolute top-0 bottom-0 left-[6%] right-[6%] border-x-[3px] border-white/70" />
+        <div className="absolute top-[25%] left-[6%] right-[6%] h-[3px] bg-white/70" />
+        <div className="absolute bottom-[25%] left-[6%] right-[6%] h-[3px] bg-white/70" />
+        <div className="absolute top-[25%] bottom-[25%] left-1/2 w-[3px] bg-white/70 transform -translate-x-1/2" />
+        <div className="absolute top-0 left-1/2 w-[3px] h-4 bg-white/80 transform -translate-x-1/2" />
+        <div className="absolute bottom-0 left-1/2 w-[3px] h-4 bg-white/80 transform -translate-x-1/2" />
+      </div>
+
+      {/* 3. The Tennis Net Line */}
+      <div className="absolute top-1/2 left-0 right-0 h-[4px] bg-slate-900/10 pointer-events-none flex items-center justify-between px-2 transform -translate-y-1/2" aria-hidden="true">
+        <div className="w-full h-[1px] bg-white/30 border-t border-dashed border-white/40" />
+      </div>
+
+      {/* Content Container */}
       <div className="relative z-10">
-        {/* Payment Notifications - Show for all upcoming matches with payment required */}
         {upcomingMatches.map(match => (
           match.amount ? (
             <PaymentNotification
@@ -101,90 +106,240 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
           ) : null
         ))}
 
-        {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-40 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            {/* Top Row - Logo and Actions */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => onNavigate('landing')}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors group" title="Back to Home"
-                >
-                  <ArrowLeft className="w-5 h-5 text-slate-700 group-hover:text-cyan-600 transition-colors" />
-                </button>
-                <AventoLogo size="md" variant="with-text" />
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setShowFirstTimeGuide(true)}
-                  className="gap-2 hover:bg-purple-50"
-                  title="Show Tutorial"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  <span className="hidden lg:inline">Guide</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => onNavigate('sports-chat')}
-                  className="gap-2 hover:bg-cyan-50"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span className="hidden sm:inline">Chats</span>
-                  <Badge className="bg-cyan-500 text-white text-xs">3</Badge>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => onNavigate('sports-community')}
-                  className="gap-2 hover:bg-emerald-50 hidden md:flex"
-                >
-                  <Users className="w-4 h-4" />
-                  Community
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => onNavigate('sports-events')}
-                  className="gap-2 hover:bg-yellow-50 hidden md:flex"
-                >
-                  <Trophy className="w-4 h-4" />
-                  Events
-                </Button>
-                <Button 
-                  onClick={() => onNavigate('comprehensive-dashboard')}
-                  className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white animate-pulse shadow-lg"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline">New Features ✨</span>
-                  <Badge className="bg-white text-purple-600 text-xs">17</Badge>
-                </Button>
-                
-                {/* Menu Dropdown - Contains Profile, Help, Map, Notifications */}
-                <MenuDropdown 
-                  onNavigate={onNavigate} 
-                  category="sports"
-                  unreadNotifications={5}
-                  userName={userProfile.name}
-                />
-              </div>
-            </div>
-            
-            {/* Bottom Row - Global Search */}
-            <div className="w-full">
-              <GlobalSearch onNavigate={onNavigate} category="sports" />
-            </div>
+        {/* Header Block */}
+        <header className="civita-nav">
+          <div className="civita-nav-ribbon" aria-hidden>
+            <span className="civita-nav-ribbon-sports" />
+            <span className="civita-nav-ribbon-events" />
+            <span className="civita-nav-ribbon-gaming" />
           </div>
+
+          <div className="civita-nav-inner">
+            <div className="civita-nav-brand-group">
+              <motion.button
+                type="button"
+                whileHover={{ x: -2, y: -2 }}
+                whileTap={{ x: 0, y: 0 }}
+                className="civita-nav-back-btn"
+                onClick={() => onNavigate('landing')}
+                aria-label="Back to home"
+              >
+                <span className="civita-nav-mark">
+                  <ArrowLeft className="civita-nav-mark-icon" strokeWidth={2.4} />
+                </span>
+              </motion.button>
+
+              <div className="civita-nav-title">
+                <span className="civita-nav-title-main">CIVITA</span>
+                <span className="civita-nav-title-sub">city playbook</span>
+              </div>
+
+              <div className="civita-brand-edition-badge">
+                <span>SPORTS</span>
+              </div>
+            </div>
+
+            <nav className="civita-nav-menu" aria-label="Actions">
+              <ul className="civita-nav-list">
+                <li>
+                  <motion.button
+                    type="button"
+                    whileHover={{ rotate: 0, y: -2, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onNavigate('sports-chat')}
+                    className="civita-nav-tab"
+                    style={{
+                      '--tab-accent': '#1d4ed8',
+                      '--tab-fill': '#eff6ff',
+                    } as React.CSSProperties}
+                  >
+                    <div className="civita-tab-content-inline">
+                      <MessageCircle className="civita-tab-icon" size={15} strokeWidth={2.5} />
+                      <span className="civita-nav-tab-label hidden-mobile">Chats</span>
+                      <span className="civita-nav-badge">3</span>
+                    </div>
+                  </motion.button>
+                </li>
+
+                <li className="hidden-tablet">
+                  <motion.button
+                    type="button"
+                    whileHover={{ rotate: 0, y: -2, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onNavigate('sports-community')}
+                    className="civita-nav-tab"
+                    style={{
+                      '--tab-accent': '#16a34a',
+                      '--tab-fill': '#f0fdf4',
+                    } as React.CSSProperties}
+                  >
+                    <div className="civita-tab-content-inline">
+                      <Users className="civita-tab-icon" size={15} strokeWidth={2.5} />
+                      <span className="civita-nav-tab-label">Community</span>
+                    </div>
+                  </motion.button>
+                </li>
+
+                <li>
+                  <motion.button
+                    type="button"
+                    whileHover={{ rotate: 0, y: -2, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onNavigate('comprehensive-dashboard')}
+                    className="civita-nav-tab"
+                    style={{
+                      '--tab-accent': '#be123c',
+                      '--tab-fill': '#fff1f2',
+                    } as React.CSSProperties}
+                  >
+                    <div className="civita-tab-content-inline">
+                      <Sparkles className="civita-tab-icon" size={15} strokeWidth={2.5} />
+                      <span className="civita-nav-tab-label hidden-mobile">Features</span>
+                      <span className="civita-nav-badge feature-badge">17</span>
+                    </div>
+                  </motion.button>
+                </li>
+
+                <li>
+                  <motion.button
+                    type="button"
+                    whileHover={{ rotate: 3, y: -2, scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onNavigate('profile')}
+                    className="civita-nav-profile-btn"
+                    aria-label="Go to profile"
+                  >
+                    {userProfile?.avatarUrl ? (
+                      <img 
+                        src={userProfile.avatarUrl} 
+                        alt={userProfile.name || 'User Profile'} 
+                        className="civita-profile-img"
+                      />
+                    ) : (
+                      <span className="civita-profile-fallback">
+                        {userProfile?.name ? userProfile.name.charAt(0).toUpperCase() : 'U'}
+                      </span>
+                    )}
+                  </motion.button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+          <div className="civita-nav-footer-line" aria-hidden />
+
+          <style>{`
+            .civita-nav { position: sticky; top: 0; z-index: 50; background: #f7f4ec; border-bottom: 3px solid #0f172a; }
+            .civita-nav-ribbon { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 5px; }
+            .civita-nav-ribbon-sports { background: #16a34a; }
+            .civita-nav-ribbon-events { background: #be123c; }
+            .civita-nav-ribbon-gaming { background: #1d4ed8; }
+            
+            .civita-nav-inner { 
+              max-width: 80rem; 
+              margin: 0 auto; 
+              padding: 12px 24px; 
+              display: flex; 
+              align-items: center; 
+              justify-content: space-between; 
+              gap: 16px; 
+            }
+            
+            .civita-nav-brand-group { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+            .civita-nav-back-btn { border: 0; background: transparent; cursor: pointer; padding: 0; flex-shrink: 0; }
+            
+            .civita-nav-mark { 
+              width: 40px; 
+              height: 40px; 
+              display: grid; 
+              place-items: center; 
+              background: #0f172a; 
+              color: #f8fafc; 
+              border: 2px solid #0f172a; 
+              border-radius: 10px; 
+              box-shadow: 2.5px 2.5px 0 #16a34a; 
+            }
+
+            .civita-nav-mark-icon { width: 18px; height: 18px; }
+
+            .civita-nav-title { display: flex; flex-direction: column; gap: 1px; }
+            .civita-nav-title-main { font-size: 26px; font-weight: 900; letter-spacing: -0.03em; line-height: 0.95; color: #0f172a; text-transform: uppercase; }
+            .civita-nav-title-sub { font-size: 10px; font-weight: 800; letter-spacing: 0.25em; text-transform: uppercase; color: #64748b; padding-left: 2px; }
+
+            .civita-brand-edition-badge {
+              background: #16a34a; 
+              color: #fff;
+              border: 2px solid #0f172a;
+              padding: 4px 10px;
+              border-radius: 6px;
+              box-shadow: 2px 2px 0 #0f172a;
+              font-size: 11px;
+              font-weight: 900;
+              letter-spacing: 0.1em;
+              line-height: 1;
+              margin-left: 4px;
+              transform: rotate(-1.5deg); 
+            }
+
+            .civita-nav-menu { display: flex; justify-content: flex-end; align-items: center; margin-left: auto; }
+            .civita-nav-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 8px; }
+            
+            .civita-nav-tab { 
+              position: relative; 
+              display: flex; 
+              align-items: center; 
+              padding: 8px 12px; 
+              border: 2px solid #0f172a; 
+              border-radius: 10px; 
+              background: #fff; 
+              cursor: pointer; 
+              box-shadow: 2.5px 2.5px 0 #0f172a; 
+              transition: all 0.15s ease; 
+            }
+            .civita-tab-content-inline { display: flex; align-items: center; gap: 6px; }
+            .civita-tab-icon { color: #0f172a; }
+            .civita-nav-tab:hover { background: var(--tab-fill); border-color: var(--tab-accent); box-shadow: 2.5px 2.5px 0 var(--tab-accent); }
+            .civita-nav-tab:hover .civita-tab-icon { color: var(--tab-accent); }
+            .civita-nav-tab-label { font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1; }
+            .civita-nav-badge { display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; padding: 1px 5px; border-radius: 5px; background: var(--tab-accent); color: #fff; border: 1.5px solid #0f172a; line-height: 1; }
+            .civita-nav-badge.feature-badge { background: #be123c; }
+
+            .civita-nav-profile-btn {
+              width: 36px;
+              height: 36px;
+              padding: 0;
+              border: 2px solid #0f172a;
+              border-radius: 50%;
+              background: #ffd60a; 
+              box-shadow: 2.5px 2.5px 0 #0f172a;
+              cursor: pointer;
+              overflow: hidden;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .civita-profile-img { width: 100%; height: 100%; object-fit: cover; }
+            .civita-profile-fallback { font-size: 13px; font-weight: 900; color: #0f172a; }
+
+            .civita-nav-footer-line { height: 0; }
+
+            @media (max-width: 640px) {
+              .civita-nav-inner { padding: 10px 14px; }
+              .hidden-mobile { display: none !important; }
+              .civita-nav-tab { padding: 6px 8px; }
+              .civita-brand-edition-badge { display: none; } 
+            }
+            @media (max-width: 768px) { .hidden-tablet { display: none !important; } }
+          `}</style>
         </header>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-          {/* Welcome Section with Emotional Connection */}
+          {/* Welcome Section */}
           <div className="mb-8 relative">
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 to-emerald-400/20 rounded-3xl blur-3xl"></div>
             <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-white shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="mb-2">
+                  <h1 className="mb-2 text-2xl font-bold text-slate-900">
                     Welcome back, <span className="bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">{userProfile.name}</span>! 👋
                   </h1>
                   <p className="text-slate-600">Your community is growing stronger with every match</p>
@@ -196,7 +351,7 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
             </div>
           </div>
 
-          {/* Hero Image Section - Community in Action */}
+          {/* Hero Image Section */}
           <div className="mb-8 relative group overflow-hidden rounded-3xl shadow-2xl">
             <img 
               src={sportsHeroImage} 
@@ -205,7 +360,7 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end">
               <div className="p-8 text-white w-full">
-                <h2 className="text-white mb-3">🎯 The Spirit of Connection</h2>
+                <h2 className="text-xl font-bold text-white mb-3">🎯 The Spirit of Connection</h2>
                 <p className="text-white/90 mb-4 max-w-2xl">
                   Every match is more than a game—it's a chance to build friendships, create memories, and belong to something special.
                 </p>
@@ -228,17 +383,17 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
             </div>
           </div>
 
-          {/* Emotional Dashboard Highlights */}
+          {/* Highlights */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-sm border border-cyan-200 shadow-lg hover:shadow-xl transition-all p-6 rounded-2xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <div className="relative z-10 group-hover:text-white transition-colors">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-cyan-600 group-hover:text-cyan-100 mb-1">Trust Score</p>
-                    <div className="flex items-baseline gap-2">
+                    <p className="text-cyan-600 group-hover:text-cyan-100 mb-1 text-sm font-semibold">Trust Score</p>
+                    <div className="flex items-baseline gap-2 text-2xl font-bold">
                       <span>4.8</span>
-                      <span className="text-cyan-600 group-hover:text-cyan-100">/5.0</span>
+                      <span className="text-sm font-normal text-cyan-600 group-hover:text-cyan-100">/5.0</span>
                     </div>
                   </div>
                   <div className="w-12 h-12 bg-cyan-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
@@ -254,10 +409,10 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
               <div className="relative z-10 group-hover:text-white transition-colors">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-emerald-600 group-hover:text-emerald-100 mb-1">Friendship Streak</p>
-                    <div className="flex items-baseline gap-2">
+                    <p className="text-emerald-600 group-hover:text-emerald-100 mb-1 text-sm font-semibold">Friendship Streak</p>
+                    <div className="flex items-baseline gap-2 text-2xl font-bold">
                       <span>12</span>
-                      <span className="text-emerald-600 group-hover:text-emerald-100">matches</span>
+                      <span className="text-sm font-normal text-emerald-600 group-hover:text-emerald-100">matches</span>
                     </div>
                   </div>
                   <div className="w-12 h-12 bg-emerald-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
@@ -273,10 +428,10 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
               <div className="relative z-10 group-hover:text-white transition-colors">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-purple-600 group-hover:text-purple-100 mb-1">Community Impact</p>
-                    <div className="flex items-baseline gap-2">
+                    <p className="text-purple-600 group-hover:text-purple-100 mb-1 text-sm font-semibold">Community Impact</p>
+                    <div className="flex items-baseline gap-2 text-2xl font-bold">
                       <span>28</span>
-                      <span className="text-purple-600 group-hover:text-purple-100">connections</span>
+                      <span className="text-sm font-normal text-purple-600 group-hover:text-purple-100">connections</span>
                     </div>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 group-hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors">
@@ -289,76 +444,57 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
-            <Button
-              size="lg"
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <button
               onClick={() => onNavigate('discovery')}
-              className="bg-gradient-to-r from-purple-600 via-violet-600 to-pink-600 hover:from-purple-700 hover:via-violet-700 hover:to-pink-700 text-white gap-3 h-auto py-4 shadow-lg hover:shadow-xl transition-all"
+              className="relative overflow-hidden rounded-2xl p-6 text-left group border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[2px_2px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}
             >
-              <Sparkles className="w-5 h-5" />
-              <div className="text-left flex-1">
-                <div className="font-bold">Discover Matches</div>
-                <div className="text-xs opacity-90">Browse all available plans near you</div>
-              </div>
-            </Button>
-            <Button
-              size="lg"
-              onClick={() => onNavigate('availability')}
-              className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-700 hover:via-blue-700 hover:to-indigo-700 text-white gap-3 h-auto py-4 shadow-lg hover:shadow-xl transition-all"
-            >
-              <TrendingUp className="w-5 h-5" />
-              <div className="text-left flex-1">
-                <div className="font-bold">Available Now</div>
-                <div className="text-xs opacity-90">Find players free to play instantly</div>
-              </div>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/10 -translate-y-8 translate-x-8" />
+              <Sparkles className="w-6 h-6 text-white mb-3" />
+              <span className="block text-white font-black text-lg leading-tight mb-1">Discover Matches</span>
+              <span className="block text-white/70 text-sm">Browse plans near you</span>
+            </button>
+
+            <button
               onClick={() => onNavigate('create-match')}
-              className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 gap-3 h-auto py-4 hover:shadow-lg transition-all"
+              className="relative overflow-hidden rounded-2xl p-6 text-left group border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[2px_2px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all bg-white"
             >
-              <Calendar className="w-5 h-5" />
-              <div className="text-left flex-1">
-                <div className="font-bold">Create Match</div>
-                <div className="text-xs opacity-70">Schedule a new game</div>
-              </div>
-            </Button>
-            <Button
-              size="lg"
-              onClick={() => onNavigate('modern-chat')}
-              className="bg-gradient-to-r from-rose-500 via-pink-500 to-red-500 hover:from-rose-600 hover:via-pink-600 hover:to-red-600 text-white gap-3 h-auto py-4 shadow-lg hover:shadow-xl transition-all"
-            >
-              <MessageSquarePlus className="w-5 h-5" />
-              <div className="text-left flex-1">
-                <div className="font-bold">Messages</div>
-                <div className="text-xs opacity-90">Chat with your matches & friends</div>
-              </div>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-emerald-50 -translate-y-8 translate-x-8" />
+              <Calendar className="w-6 h-6 text-emerald-600 mb-3" />
+              <span className="block text-slate-900 font-black text-lg leading-tight mb-1">Create Match</span>
+              <span className="block text-slate-500 text-sm">Schedule a new game</span>
+            </button>
+
+            <button
               onClick={() => onNavigate('match-history')}
-              className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-3 h-auto py-4 hover:shadow-lg transition-all"
+              className="relative overflow-hidden rounded-2xl p-6 text-left group border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[2px_2px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all bg-white"
             >
-              <Trophy className="w-5 h-5" />
-              <div className="text-left flex-1">
-                <div className="font-bold">My Matches</div>
-                <div className="text-xs opacity-70">See every match you've played</div>
-              </div>
-            </Button>
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-amber-50 -translate-y-8 translate-x-8" />
+              <Trophy className="w-6 h-6 text-amber-500 mb-3" />
+              <span className="block text-slate-900 font-black text-lg leading-tight mb-1">My Matches</span>
+              <span className="block text-slate-500 text-sm">See every match you've played</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('sports-events')}
+              className="relative overflow-hidden rounded-2xl p-6 text-left group border-2 border-black shadow-[4px_4px_0px_#000] hover:shadow-[2px_2px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+              style={{ background: 'linear-gradient(135deg, #0891b2, #6366f1)' }}
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/10 -translate-y-8 translate-x-8" />
+              <Star className="w-6 h-6 text-white mb-3" />
+              <span className="block text-white font-black text-lg leading-tight mb-1">Events & Tournaments</span>
+              <span className="block text-white/70 text-sm">What's happening near you</span>
+            </button>
           </div>
 
-          {/* Upcoming Matches & Rituals */}
+          {/* Upcoming Matches Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-lg p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-cyan-600" />
-                <h2>Your Upcoming Matches</h2>
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-5 h-5 text-cyan-600" />
+              <h2 className="text-xl font-bold text-slate-900">Your Upcoming Matches</h2>
             </div>
 
-            {/* Countdown Timer for Next Match */}
             {upcomingMatches.length > 0 && upcomingMatches[0] && (
               <div className="mb-4">
                 <MatchCountdownTimer
@@ -374,7 +510,7 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
               <EmptyState
                 icon={Calendar}
                 title="No upcoming matches yet"
-                description="Ready to make new friends? Join a match or create one to get started! Every game is a chance to build connections. ⚽"
+                description="Ready to make new friends? Join a match or create one to get started!"
                 actionLabel="Find Matches"
                 onAction={() => onNavigate('finder')}
                 secondaryActionLabel="Create Match"
@@ -383,51 +519,48 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
             ) : (
               <div className="space-y-4">
                 {upcomingMatches.map(match => (
-                  <div key={match.id} className="flex items-start gap-4 p-4 bg-gradient-to-r from-cyan-50 to-emerald-50 rounded-xl border border-cyan-200 hover:shadow-md transition-shadow">
+                  <div key={match.id} className="flex flex-col sm:flex-row items-start gap-4 p-4 bg-gradient-to-r from-cyan-50 to-emerald-50 rounded-xl border border-cyan-200 hover:shadow-md transition-shadow">
                     <ImageWithFallback 
-                      src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop"
+                      src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&h=300&fit=crop"
                       alt="Football field"
                       className="w-24 h-24 object-cover rounded-lg shadow-md"
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 w-full">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3>{match.title}</h3>
-                          <p className="text-slate-600">{match.turfName}{match.location ? ` • ${match.location}` : ''}</p>
+                          <h3 className="font-bold text-slate-900">{match.title}</h3>
+                          <p className="text-slate-600 text-sm">{match.turfName}{match.location ? ` • ${match.location}` : ''}</p>
                         </div>
                         <Badge className="bg-cyan-500 text-white">{match.sport}</Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-3">
                         <span>{match.date}, {match.time}</span>
                         <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          8/10 players
+                          <Users className="w-4 h-4" /> 8/10 players
                         </span>
                         {match.amount && (
-                          <span className="flex items-center gap-1 text-emerald-600">
-                            <CreditCard className="w-4 h-4" />
-                            ₹{match.amount}
+                          <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                            <CreditCard className="w-4 h-4" /> ₹{match.amount}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <div className="flex -space-x-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 border-2 border-white flex items-center justify-center text-xs text-white shadow-md">S</div>
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 border-2 border-white flex items-center justify-center text-xs text-white shadow-md">M</div>
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-500 border-2 border-white flex items-center justify-center text-xs text-white shadow-md">R</div>
+                            <div className="w-8 h-8 rounded-full bg-cyan-500 border-2 border-white flex items-center justify-center text-xs text-white shadow-md font-bold">S</div>
+                            <div className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-xs text-white shadow-md font-bold">M</div>
+                            <div className="w-8 h-8 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-xs text-white shadow-md font-bold">R</div>
                           </div>
                           <span className="text-sm text-slate-600">Friends attending</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
                           <Button
                             onClick={() => onNavigate('sports-chat', undefined, match.id)}
                             variant="outline"
                             size="sm"
                             className="gap-2 border-cyan-500 text-cyan-600 hover:bg-cyan-50"
                           >
-                            <MessageCircle className="w-4 h-4" />
-                            Chat
+                            <MessageCircle className="w-4 h-4" /> Chat
                           </Button>
                           {match.paymentOption === 'split' && match.amount && (
                             <Button
@@ -435,8 +568,7 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
                               size="sm"
                               className="gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
                             >
-                              <CreditCard className="w-4 h-4" />
-                              Pay Now
+                              <CreditCard className="w-4 h-4" /> Pay Now
                             </Button>
                           )}
                         </div>
@@ -448,172 +580,48 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
             )}
           </div>
 
-          {/* Search & Discover Turfs */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2>Discover Turfs & Connect</h2>
-              <Button 
-                onClick={() => onNavigate('finder')}
-                variant="outline"
-                className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-              >
-                View All Turfs
-              </Button>
-            </div>
-            
-            <div className="flex gap-4 mb-6">
-              <div className="flex-1 relative">
-                <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input 
-                  placeholder="Search turfs by name or location..."
-                  className="pl-10 bg-white/80 backdrop-blur-sm border-slate-300"
-                />
-              </div>
-              <Button variant="outline" className="gap-2 border-slate-300">
-                <Filter className="w-4 h-4" />
-                Filter
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <TurfCard
-                id="1"
-                image="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop"
-                sport="Football"
-                name="Sky Sports Arena"
-                location="Satellite, Ahmedabad"
-                rating={4.8}
-                price="₹1500/hr"
-                trustScore={4.7}
-                communitySize={45}
-                onNavigate={onNavigate}
-              />
-              
-              <TurfCard
-                id="2"
-                image="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&h=300&fit=crop"
-                sport="Cricket"
-                name="Victory Cricket Ground"
-                location="Maninagar, Ahmedabad"
-                rating={4.7}
-                price="₹2000/hr"
-                trustScore={4.9}
-                communitySize={62}
-                onNavigate={onNavigate}
-              />
-              
-              <TurfCard
-                id="3"
-                image="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop"
-                sport="Basketball"
-                name="Hoops Basketball Court"
-                location="Vastrapur, Ahmedabad"
-                rating={4.6}
-                price="₹800/hr"
-                trustScore={4.6}
-                communitySize={38}
-                onNavigate={onNavigate}
-              />
-              
-              <TurfCard
-                id="4"
-                image="https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=400&h=300&fit=crop"
-                sport="Football"
-                name="Elite Football Academy"
-                location="SG Highway, Ahmedabad"
-                rating={4.9}
-                price="₹1800/hr"
-                trustScore={4.8}
-                communitySize={56}
-                onNavigate={onNavigate}
-              />
-              
-              <TurfCard
-                id="5"
-                image="https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=400&h=300&fit=crop"
-                sport="Cricket"
-                name="Champions Cricket Turf"
-                location="Naroda, Ahmedabad"
-                rating={4.5}
-                price="₹1700/hr"
-                trustScore={4.5}
-                communitySize={41}
-                onNavigate={onNavigate}
-              />
-              
-              <TurfCard
-                id="6"
-                image="https://images.unsplash.com/photo-1519766304817-4f37bda74a26?w=400&h=300&fit=crop"
-                sport="Basketball"
-                name="Urban Basketball Arena"
-                location="Bodakdev, Ahmedabad"
-                rating={4.7}
-                price="₹1000/hr"
-                trustScore={4.7}
-                communitySize={48}
-                onNavigate={onNavigate}
-              />
-            </div>
-          </div>
-
           {/* Coaching CTA */}
-          <div className="mt-8 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-8 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30\"></div>
-            
+          <div className="mt-8 bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl relative overflow-hidden border border-emerald-200">
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl pointer-events-none"></div>
+
             <div className="relative z-10 text-center">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
-                <GraduationCap className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200 shadow-sm">
+                <GraduationCap className="w-8 h-8 text-emerald-600" />
               </div>
-              <h2 className="mb-2 text-white">Level Up Your Game</h2>
-              <p className="text-white/90 mb-6 max-w-2xl mx-auto">
+              
+              <h2 className="mb-2 text-2xl font-bold text-slate-900">Level Up Your Game</h2>
+              
+              <p className="text-slate-600 mb-6 max-w-2xl mx-auto font-medium">
                 Get professional coaching at your favorite turfs. Expert guidance, flexible plans, and personalized training from ₹2,999/month.
               </p>
+              
               <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
-                  <Award className="w-4 h-4 text-white" />
-                  <span className="text-sm text-white">Expert Coaches</span>
+                <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 border border-slate-200 shadow-sm">
+                  <Award className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm font-semibold text-slate-700">Expert Coaches</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
-                  <Calendar className="w-4 h-4 text-white" />
-                  <span className="text-sm text-white">Flexible Schedule</span>
+                <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 border border-slate-200 shadow-sm">
+                  <Calendar className="w-4 h-4 text-cyan-500" />
+                  <span className="text-sm font-semibold text-slate-700">Flexible Schedule</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
-                  <TrendingUp className="w-4 h-4 text-white" />
-                  <span className="text-sm text-white">Track Progress</span>
+                <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 border border-slate-200 shadow-sm">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm font-semibold text-slate-700">Track Progress</span>
                 </div>
               </div>
+              
               <Button 
                 onClick={() => onNavigate('turf-detail', '1')}
                 size="lg"
-                className="bg-white text-purple-600 hover:bg-slate-50 shadow-lg gap-2"
+                className="bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg gap-2 font-bold transition-all hover:-translate-y-0.5"
               >
-                <GraduationCap className="w-5 h-5" />
-                Explore Coaching Plans
-              </Button>
-            </div>
-          </div>
-
-          {/* Post-Match Reflection CTA */}
-          <div className="mt-8 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 text-white rounded-2xl p-8 text-center shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30"></div>
-            <div className="relative z-10">
-              <Heart className="w-12 h-12 mx-auto mb-4 text-white/90" />
-              <h2 className="mb-2 text-white">Share Your Experience</h2>
-              <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-                Played recently? Take a moment to reflect, express gratitude, and strengthen your bonds.
-              </p>
-              <Button 
-                onClick={() => onNavigate('reflection')}
-                size="lg"
-                className="bg-white text-purple-600 hover:bg-slate-50 shadow-lg"
-              >
-                Start Reflection
+                <GraduationCap className="w-5 h-5" /> Explore Coaching Plans
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Payment Modal */}
         {showPaymentModal && selectedMatch && (
           <PaymentModal
             onClose={() => setShowPaymentModal(false)}
@@ -629,28 +637,11 @@ export function Dashboard({ onNavigate, userProfile, matches }: DashboardProps) 
   );
 }
 
-function TurfCard({ 
-  id,
-  image, 
-  sport, 
-  name, 
-  location, 
-  rating, 
-  price,
-  trustScore,
-  communitySize,
-  onNavigate
+export function TurfCard({ 
+  id, image, sport, name, location, rating, price, trustScore, communitySize, onNavigate
 }: { 
-  id: string;
-  image: string;
-  sport: string;
-  name: string;
-  location: string;
-  rating: number;
-  price: string;
-  trustScore: number;
-  communitySize: number;
-  onNavigate: (page: 'dashboard' | 'profile' | 'community' | 'reflection' | 'finder' | 'create-match' | 'turf-detail' | 'chat' | 'help', turfId?: string, matchId?: string) => void;
+  id: string; image: string; sport: string; name: string; location: string; rating: number; price: string; trustScore: number; communitySize: number;
+  onNavigate: (page: NavigationPages, turfId?: string, matchId?: string) => void;
 }) {
   return (
     <button
@@ -658,38 +649,26 @@ function TurfCard({
       className="bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-slate-200 hover:shadow-xl hover:scale-105 transition-all text-left w-full"
     >
       <div className="relative">
-        <ImageWithFallback 
-          src={image}
-          alt={name}
-          className="w-full h-48 object-cover"
-        />
-        <Badge className="absolute top-3 right-3 bg-white text-slate-700 shadow-md">
-          {sport}
-        </Badge>
+        <ImageWithFallback src={image} alt={name} className="w-full h-48 object-cover" />
+        <Badge className="absolute top-3 right-3 bg-white text-slate-700 shadow-md">{sport}</Badge>
       </div>
       <div className="p-4">
-        <h3 className="mb-1">{name}</h3>
-        <div className="flex items-center gap-1 text-slate-600 mb-3">
-          <MapPin className="w-4 h-4" />
-          <span>{location}</span>
+        <h3 className="mb-1 font-bold text-slate-900">{name}</h3>
+        <div className="flex items-center gap-1 text-slate-600 mb-3 text-sm">
+          <MapPin className="w-4 h-4" /> <span>{location}</span>
         </div>
-        
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 text-sm">
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-            <span>{rating}</span>
+            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" /> <span>{rating}</span>
           </div>
-          <span className="text-cyan-600">{price}</span>
+          <span className="text-cyan-600 font-semibold">{price}</span>
         </div>
-
         <div className="flex items-center gap-4 pt-3 border-t text-sm">
           <div className="flex items-center gap-1 text-slate-600">
-            <ShieldIcon className="w-4 h-4 text-cyan-600" />
-            <span>{trustScore} Trust</span>
+            <ShieldIcon className="w-4 h-4 text-cyan-600" /> <span>{trustScore} Trust</span>
           </div>
           <div className="flex items-center gap-1 text-slate-600">
-            <Users className="w-4 h-4 text-emerald-600" />
-            <span>{communitySize} Active</span>
+            <Users className="w-4 h-4 text-emerald-600" /> <span>{communitySize} Active</span>
           </div>
         </div>
       </div>

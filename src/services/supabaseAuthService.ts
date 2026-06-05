@@ -18,6 +18,35 @@ const STORAGE_KEYS = {
   feedback: 'civita_supabase_demo_feedback',
 };
 
+const CURRENT_USER_KEY = 'civita_current_user';
+
+const normalizeProfileUpdates = (updates: Record<string, any>) => {
+  const normalized = { ...updates };
+
+  if (normalized.full_name && !normalized.name) {
+    normalized.name = normalized.full_name;
+  }
+  if (normalized.avatar_url && !normalized.avatar) {
+    normalized.avatar = normalized.avatar_url;
+  }
+  if (normalized.age !== undefined && normalized.age !== null && normalized.age !== '') {
+    normalized.age = Number(normalized.age);
+  }
+  if (Array.isArray(normalized.interests) && !normalized.sports_interests) {
+    normalized.sports_interests = normalized.interests;
+  }
+
+  delete normalized.full_name;
+  delete normalized.avatar_url;
+  delete normalized.interests;
+  delete normalized.category;
+  delete normalized.user_id;
+
+  return Object.fromEntries(
+    Object.entries(normalized).filter(([, value]) => value !== undefined)
+  );
+};
+
 // ==================== Authentication ====================
 
 export const supabaseAuth = {
@@ -37,7 +66,7 @@ export const supabaseAuth = {
       const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
       users.push(mockUser);
       localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-      localStorage.setItem('civta_current_user', JSON.stringify(mockUser));
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockUser));
 
       console.log('✅ [DEMO] User registered:', displayName);
       return { user: mockUser, error: null };
@@ -83,7 +112,7 @@ export const supabaseAuth = {
         return { user: null, error: 'User not found' };
       }
 
-      localStorage.setItem('civta_current_user', JSON.stringify(user));
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
       console.log('✅ [DEMO] User signed in:', email);
       return { user, error: null };
     }
@@ -123,7 +152,7 @@ export const supabaseAuth = {
       const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
       users.push(mockUser);
       localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-      localStorage.setItem('civta_current_user', JSON.stringify(mockUser));
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockUser));
 
       // Also create profile in "Supabase"
       await userProfileService.upsertProfile(mockUser.id, {
@@ -159,7 +188,7 @@ export const supabaseAuth = {
   signOut: async () => {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE
-      localStorage.removeItem('civta_current_user');
+      localStorage.removeItem(CURRENT_USER_KEY);
       console.log('✅ [DEMO] User signed out');
       return { error: null };
     }
@@ -180,7 +209,7 @@ export const supabaseAuth = {
   getCurrentUser: async () => {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE
-      const user = localStorage.getItem('civta_current_user');
+      const user = localStorage.getItem(CURRENT_USER_KEY);
       return user ? JSON.parse(user) : null;
     }
 
@@ -199,18 +228,22 @@ export const supabaseAuth = {
   onAuthStateChanged: (callback: (user: any) => void) => {
     if (!SUPABASE_ENABLED) {
       // DEMO MODE: Check localStorage
-      const user = localStorage.getItem('civta_current_user');
+      const user = localStorage.getItem(CURRENT_USER_KEY);
       callback(user ? JSON.parse(user) : null);
 
       // Listen to storage changes
       const handleStorageChange = () => {
-        const updatedUser = localStorage.getItem('civta_current_user');
+        const updatedUser = localStorage.getItem(CURRENT_USER_KEY);
         callback(updatedUser ? JSON.parse(updatedUser) : null);
       };
 
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
     }
+
+    supabase!.auth.getSession().then(({ data }) => {
+      callback(data.session?.user || null);
+    });
 
     const {
       data: { subscription },
@@ -239,10 +272,9 @@ export const usersService = {
       return () => clearInterval(interval);
     }
 
-    // Subscribe to profiles table
-    const subscription = supabase!
-      .from('profiles')
-      .on('*', () => {
+    const channel = supabase!
+      .channel('profiles-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
         supabase!
           .from('profiles')
           .select('*')
@@ -253,7 +285,7 @@ export const usersService = {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase!.removeChannel(channel);
     };
   },
 
@@ -269,7 +301,7 @@ export const usersService = {
       const { data, error } = await supabase!
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (error) throw error;
@@ -292,13 +324,14 @@ export const usersService = {
     }
 
     try {
+      const payload = normalizeProfileUpdates(updates);
       await supabase!
         .from('profiles')
         .update({
-          ...updates,
+          ...payload,
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       return { error: null };
     } catch (error: any) {
@@ -336,7 +369,7 @@ export const usersService = {
       const { data, error } = await supabase!
         .from('profiles')
         .select('*')
-        .or(`email.ilike.%${query}%,full_name.ilike.%${query}%`);
+        .or(`email.ilike.%${query}%,name.ilike.%${query}%`);
 
       if (error) throw error;
       return data || [];
@@ -344,6 +377,43 @@ export const usersService = {
       console.error('Error searching users:', error);
       return [];
     }
+  },
+
+  createProfile: async (profileData: any) => {
+    if (!SUPABASE_ENABLED) {
+      const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
+      users.push(profileData);
+      localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+      return { data: profileData, error: null };
+    }
+
+    try {
+      const id = profileData.id || profileData.user_id;
+      const payload = normalizeProfileUpdates(profileData);
+      const { data, error } = await supabase!
+        .from('profiles')
+        .upsert(
+          {
+            id,
+            user_id: id,
+            email: profileData.email,
+            ...payload,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message };
+    }
+  },
+
+  updateProfile: async (profileId: string, updates: any) => {
+    return usersService.updateUserProfile(profileId, updates);
   },
 };
 
@@ -364,10 +434,9 @@ export const matchesService = {
       return () => clearInterval(interval);
     }
 
-    // Real-time subscription
-    const subscription = supabase!
-      .from('matches')
-      .on('*', () => {
+    const channel = supabase!
+      .channel('matches-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
         supabase!
           .from('matches')
           .select('*')
@@ -378,7 +447,7 @@ export const matchesService = {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase!.removeChannel(channel);
     };
   },
 
@@ -397,13 +466,30 @@ export const matchesService = {
     }
 
     try {
-      const payload = { ...matchData };
+      const payload: Record<string, any> = { ...matchData };
+
+      if (!payload.organizer_id && payload.user_id) {
+        payload.organizer_id = String(payload.user_id);
+      }
+      if (payload.date && !String(payload.date).includes('T')) {
+        payload.date = new Date(`${payload.date} ${payload.time || '00:00'}`).toISOString();
+      }
+      if (!payload.date) {
+        payload.date = new Date().toISOString();
+      }
+      if (payload.lat !== undefined && payload.latitude === undefined) {
+        payload.latitude = payload.lat;
+      }
+      if (payload.lng !== undefined && payload.longitude === undefined) {
+        payload.longitude = payload.lng;
+      }
+      delete payload.lat;
+      delete payload.lng;
 
       // Keep compatibility with schemas that only have turf_cost (no amount column).
       if ((payload.turf_cost === undefined || payload.turf_cost === null) && payload.amount !== undefined) {
         payload.turf_cost = payload.amount;
       }
-      delete payload.amount;
 
       // Remove undefined fields to avoid schema-cache write errors.
       Object.keys(payload).forEach((key) => {
@@ -413,13 +499,13 @@ export const matchesService = {
       });
 
       // Provide default values for required GIS fields
-      if (payload.lat === null || payload.lat === undefined) {
-        payload.lat = 28.5355; // Default: Ahmedabad, India latitude
-        console.warn('⚠️ Using default latitude: 28.5355');
+      if (payload.latitude === null || payload.latitude === undefined) {
+        payload.latitude = 23.0225; // Default: Ahmedabad, India latitude
+        console.warn('⚠️ Using default latitude: 23.0225');
       }
-      if (payload.lng === null || payload.lng === undefined) {
-        payload.lng = 77.3910; // Default: Ahmedabad, India longitude
-        console.warn('⚠️ Using default longitude: 77.3910');
+      if (payload.longitude === null || payload.longitude === undefined) {
+        payload.longitude = 72.5714; // Default: Ahmedabad, India longitude
+        console.warn('⚠️ Using default longitude: 72.5714');
       }
 
       // Schema-adaptive insert: if Supabase reports a missing column or constraint, drop it and retry.
@@ -476,7 +562,7 @@ export const matchesService = {
     matchId: string,
     userId: string,
     role: 'organizer' | 'player' = 'player',
-    status: 'joined' | 'paid' | 'confirmed' | 'completed' | 'cancelled' = 'joined'
+    status: 'joined' | 'paid' | 'confirmed' | 'completed' | 'cancelled' = 'confirmed'
   ) => {
     if (!SUPABASE_ENABLED) {
       const participants = JSON.parse(localStorage.getItem(STORAGE_KEYS.matchParticipants) || '[]');
@@ -503,11 +589,17 @@ export const matchesService = {
     }
 
     try {
+      const dbStatus = status === 'joined' || status === 'paid' || status === 'completed'
+        ? 'confirmed'
+        : status === 'cancelled'
+          ? 'declined'
+          : status;
+
       const participantPayload: Record<string, any> = {
         match_id: matchId,
         user_id: userId,
         role,
-        status,
+        status: dbStatus,
       };
 
       let lastError: any = null;
@@ -558,24 +650,30 @@ export const matchesService = {
     }
   },
 
-  // Get matches by sport
-  getMatches: async (sport?: string) => {
+  // Get matches by category or sport
+  getMatches: async (categoryOrSport?: string) => {
     if (!SUPABASE_ENABLED) {
       const matches = JSON.parse(localStorage.getItem(STORAGE_KEYS.matches) || '[]');
-      return sport ? matches.filter((m: any) => m.sport === sport) : matches;
+      return categoryOrSport
+        ? matches.filter((m: any) => m.category === categoryOrSport || m.sport === categoryOrSport)
+        : matches;
     }
 
     try {
       let query = supabase!.from('matches').select('*');
 
-      if (sport) {
-        query = query.eq('sport', sport);
+      if (categoryOrSport) {
+        query = query.or(`category.eq.${categoryOrSport},sport.eq.${categoryOrSport}`);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.order('date', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map((match: any) => ({
+        ...match,
+        lat: match.lat ?? match.latitude,
+        lng: match.lng ?? match.longitude,
+      }));
     } catch (error: any) {
       console.error('Error fetching matches:', error);
       return [];
@@ -606,6 +704,8 @@ export const matchesService = {
 
       const rows = (data || []).map((row: any) => ({
         ...(row.matches || {}),
+        lat: row.matches?.lat ?? row.matches?.latitude,
+        lng: row.matches?.lng ?? row.matches?.longitude,
         participant_status: row.status,
         participant_role: row.role,
         participant_joined_at: null,
@@ -746,9 +846,9 @@ export const eventsService = {
       return () => clearInterval(interval);
     }
 
-    const subscription = supabase!
-      .from('events')
-      .on('*', () => {
+    const channel = supabase!
+      .channel('events-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
         supabase!
           .from('events')
           .select('*')
@@ -759,10 +859,8 @@ export const eventsService = {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase!.removeChannel(channel);
     };
   },
 };
 
-// Re-export firebaseAuth as default for compatibility
-export const firebaseAuth = supabaseAuth;

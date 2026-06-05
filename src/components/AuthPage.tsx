@@ -1,13 +1,42 @@
-import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { AventoLogo } from './AventoLogo';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../lib/AuthProvider';
-import { Loader2, Trophy, Music, AlertCircle, LogOut, Gamepad2, ArrowLeft } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Compass,
+  Gamepad2,
+  Loader2,
+  LockKeyhole,
+  LogOut,
+  MessageCircle,
+  ShieldCheck,
+  Trophy,
+  Users,
+  Zap,
+} from 'lucide-react';
 
 interface AuthPageProps {
   onAuthSuccess: () => void;
   onBack?: () => void;
+}
+
+const previewItems = [
+  { icon: Trophy, label: 'Football at Sky Arena', meta: '3 spots open tonight', color: '#009b72' },
+  { icon: CalendarDays, label: 'Indie music night', meta: 'Friday, 8 PM', color: '#c43b6d' },
+  { icon: Gamepad2, label: 'Valorant squad', meta: 'Ranked lobby forming', color: '#315eea' },
+];
+
+function GoogleMark() {
+  return (
+    <svg className="auth-google-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06L5.84 9.9C6.71 7.31 9.14 5.38 12 5.38z" />
+    </svg>
+  );
 }
 
 export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
@@ -16,9 +45,7 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
   const [demoUserReady, setDemoUserReady] = useState(false);
   const [initializingDemo, setInitializingDemo] = useState(false);
 
-  // Initialize demo user on component mount (now using mock auth)
   useEffect(() => {
-    // Mock initialization - demo user is always ready with mock auth
     setDemoUserReady(true);
     setInitializingDemo(false);
   }, []);
@@ -28,17 +55,16 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
       setLoading(true);
       try {
         const { data, error } = await signIn('demo@civita.com', 'demo123');
-        
         if (error) {
           console.error('Demo login error:', error);
-          toast.error('Demo login failed. Please try creating a new account instead.');
+          toast.error('Demo login failed. Please try Google sign-in instead.');
         } else if (data) {
-          toast.success('Welcome to the demo! 🎉');
+          toast.success('Demo profile opened');
           onAuthSuccess();
         }
       } catch (error: any) {
         console.error('Demo auth error:', error);
-        toast.error('Demo login failed. Please try creating a new account.');
+        toast.error('Demo login failed. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -49,12 +75,11 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
     setLoading(true);
     try {
       const { data, error } = await signInWithGoogle();
-      
       if (error) {
         console.error('Google sign in error:', error);
         toast.error(error.message || 'Failed to sign in with Google');
       } else if (data) {
-        toast.success('Welcome! 🎉');
+        toast.success('Welcome to Civita');
         onAuthSuccess();
       }
     } catch (error: any) {
@@ -66,207 +91,587 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-purple-50 to-orange-50 flex items-center justify-center p-4 relative">
-      {/* Back Button */}
+    <main className="auth-shell">
+      <style>{`
+        .auth-shell {
+          min-height: 100vh;
+          position: relative;
+          overflow: hidden;
+          color: #101828;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          background:
+            radial-gradient(circle at 12% 18%, rgba(20, 184, 166, 0.26), transparent 32%),
+            radial-gradient(circle at 88% 18%, rgba(196, 59, 109, 0.18), transparent 30%),
+            linear-gradient(135deg, #f4fbf8 0%, #fff7ef 48%, #f8f5ff 100%);
+        }
+
+        .auth-shell::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(16, 24, 40, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(16, 24, 40, 0.06) 1px, transparent 1px);
+          background-size: 42px 42px;
+          mask-image: linear-gradient(to bottom, black, transparent 86%);
+          pointer-events: none;
+        }
+
+        .auth-back {
+          position: absolute;
+          z-index: 5;
+          top: 24px;
+          left: 24px;
+          width: 44px;
+          height: 44px;
+          border-radius: 999px;
+          border: 1px solid rgba(16, 24, 40, 0.12);
+          background: rgba(255, 255, 255, 0.72);
+          color: #344054;
+          display: grid;
+          place-items: center;
+          box-shadow: 0 16px 50px rgba(16, 24, 40, 0.08);
+          backdrop-filter: blur(18px);
+          cursor: pointer;
+          transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+        }
+
+        .auth-back:hover {
+          transform: translateY(-2px);
+          background: #ffffff;
+          color: #101828;
+        }
+
+        .auth-layout {
+          position: relative;
+          z-index: 1;
+          min-height: 100vh;
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 88px 28px;
+          display: grid;
+          grid-template-columns: minmax(0, 1.04fr) minmax(390px, 0.82fr);
+          gap: 34px;
+          align-items: center;
+        }
+
+        .auth-hero {
+          border-radius: 36px;
+          padding: 42px;
+          border: 1px solid rgba(255, 255, 255, 0.74);
+          background: rgba(255, 255, 255, 0.54);
+          box-shadow: 0 30px 90px rgba(16, 24, 40, 0.12);
+          backdrop-filter: blur(22px);
+        }
+
+        .auth-brand-row {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          margin-bottom: 28px;
+        }
+
+        .auth-mark {
+          width: 64px;
+          height: 64px;
+          border-radius: 22px;
+          background: #101828;
+          color: #ffffff;
+          display: grid;
+          place-items: center;
+          box-shadow: 0 18px 36px rgba(16, 24, 40, 0.2);
+        }
+
+        .auth-mark-inner {
+          width: 42px;
+          height: 42px;
+          border-radius: 15px;
+          display: grid;
+          place-items: center;
+          background: linear-gradient(135deg, #10b981, #38bdf8 50%, #f97316);
+        }
+
+        .auth-kicker {
+          margin: 0 0 4px;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          color: #667085;
+        }
+
+        .auth-title {
+          margin: 0;
+          max-width: 680px;
+          font-size: clamp(52px, 7vw, 92px);
+          line-height: 0.9;
+          letter-spacing: -0.075em;
+          font-weight: 950;
+          color: #101828;
+        }
+
+        .auth-copy {
+          margin: 24px 0 0;
+          max-width: 660px;
+          font-size: 19px;
+          line-height: 1.65;
+          color: #344054;
+        }
+
+        .auth-preview-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 14px;
+          margin-top: 34px;
+        }
+
+        .auth-preview-card {
+          min-height: 154px;
+          border-radius: 28px;
+          border: 1px solid rgba(16, 24, 40, 0.08);
+          background: rgba(255, 255, 255, 0.72);
+          padding: 18px;
+          box-shadow: 0 14px 34px rgba(16, 24, 40, 0.08);
+        }
+
+        .auth-preview-icon {
+          width: 46px;
+          height: 46px;
+          display: grid;
+          place-items: center;
+          border-radius: 18px;
+          margin-bottom: 24px;
+        }
+
+        .auth-preview-label {
+          margin: 0;
+          color: #101828;
+          font-weight: 850;
+          line-height: 1.2;
+        }
+
+        .auth-preview-meta {
+          margin: 8px 0 0;
+          font-size: 14px;
+          color: #667085;
+        }
+
+        .auth-signal-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 22px;
+        }
+
+        .auth-signal {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border-radius: 999px;
+          border: 1px solid rgba(16, 24, 40, 0.1);
+          background: rgba(255, 255, 255, 0.72);
+          padding: 9px 13px;
+          color: #344054;
+          font-size: 13px;
+          font-weight: 750;
+          box-shadow: 0 10px 22px rgba(16, 24, 40, 0.06);
+        }
+
+        .auth-panel-wrap {
+          border-radius: 34px;
+          padding: 10px;
+          background: rgba(255, 255, 255, 0.56);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          box-shadow: 0 36px 90px rgba(16, 24, 40, 0.16);
+          backdrop-filter: blur(22px);
+        }
+
+        .auth-panel {
+          border-radius: 26px;
+          border: 1px solid rgba(16, 24, 40, 0.08);
+          background: #fffdf8;
+          padding: 34px;
+        }
+
+        .auth-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: #e7f8f1;
+          color: #087457;
+          border: 1px solid #bfead9;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          margin-bottom: 18px;
+        }
+
+        .auth-panel-title {
+          margin: 0;
+          font-size: clamp(32px, 4vw, 44px);
+          line-height: 1;
+          letter-spacing: -0.055em;
+          color: #101828;
+          font-weight: 950;
+        }
+
+        .auth-panel-copy {
+          margin: 14px 0 0;
+          color: #475467;
+          line-height: 1.65;
+          font-size: 15px;
+        }
+
+        .auth-actions {
+          margin-top: 28px;
+          display: grid;
+          gap: 12px;
+        }
+
+        .auth-button {
+          width: 100%;
+          min-height: 56px;
+          border-radius: 18px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          border: 0;
+          cursor: pointer;
+          font-size: 15px;
+          font-weight: 850;
+          transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+        }
+
+        .auth-button:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+
+        .auth-button:hover:not(:disabled) {
+          transform: translateY(-2px);
+        }
+
+        .auth-google {
+          color: #101828;
+          background: #ffffff;
+          border: 1px solid #d0d5dd;
+          box-shadow: 0 12px 26px rgba(16, 24, 40, 0.08);
+        }
+
+        .auth-demo {
+          background: #101828;
+          color: #ffffff;
+          justify-content: space-between;
+          text-align: left;
+          padding: 16px 18px;
+          box-shadow: 0 20px 38px rgba(16, 24, 40, 0.18);
+        }
+
+        .auth-demo-text {
+          display: grid;
+          gap: 4px;
+        }
+
+        .auth-demo-title {
+          font-weight: 900;
+        }
+
+        .auth-demo-sub {
+          color: rgba(255, 255, 255, 0.68);
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        .auth-browse {
+          background: transparent;
+          color: #475467;
+          min-height: 46px;
+          border: 1px solid transparent;
+        }
+
+        .auth-browse:hover {
+          background: rgba(255, 255, 255, 0.74);
+          border-color: rgba(16, 24, 40, 0.1);
+          color: #101828;
+        }
+
+        .auth-unlocks {
+          margin-top: 24px;
+          border-radius: 24px;
+          border: 1px solid rgba(16, 24, 40, 0.08);
+          background: #ffffff;
+          padding: 18px;
+        }
+
+        .auth-unlocks-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0 0 14px;
+          color: #101828;
+          font-weight: 900;
+          font-size: 14px;
+        }
+
+        .auth-unlocks-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px 16px;
+          color: #667085;
+          font-size: 14px;
+        }
+
+        .auth-user-card {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 22px;
+        }
+
+        .auth-avatar {
+          width: 64px;
+          height: 64px;
+          border-radius: 22px;
+          display: grid;
+          place-items: center;
+          background: #101828;
+          color: #ffffff;
+          font-size: 24px;
+          font-weight: 950;
+        }
+
+        .auth-account-box {
+          border-radius: 24px;
+          border: 1px solid rgba(16, 24, 40, 0.08);
+          background: #ffffff;
+          padding: 18px;
+          margin: 22px 0;
+        }
+
+        .auth-account-label {
+          margin: 0 0 4px;
+          color: #667085;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .auth-account-email {
+          margin: 0;
+          color: #101828;
+          font-size: 18px;
+          font-weight: 850;
+          overflow-wrap: anywhere;
+        }
+
+        .auth-primary {
+          background: #101828;
+          color: #ffffff;
+          box-shadow: 0 20px 38px rgba(16, 24, 40, 0.18);
+        }
+
+        .auth-secondary {
+          background: #ffffff;
+          color: #344054;
+          border: 1px solid #d0d5dd;
+        }
+
+        .auth-google-mark {
+          width: 20px;
+          height: 20px;
+          flex: 0 0 auto;
+        }
+
+        .auth-icon {
+          width: 20px;
+          height: 20px;
+          flex: 0 0 auto;
+        }
+
+        @media (max-width: 980px) {
+          .auth-layout {
+            grid-template-columns: 1fr;
+            max-width: 760px;
+            padding-top: 86px;
+          }
+
+          .auth-hero {
+            padding: 30px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .auth-layout {
+            padding: 78px 16px 30px;
+          }
+
+          .auth-title {
+            font-size: 48px;
+          }
+
+          .auth-copy {
+            font-size: 16px;
+          }
+
+          .auth-preview-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .auth-panel {
+            padding: 24px;
+          }
+
+          .auth-unlocks-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
       {onBack && (
-        <button
-          onClick={onBack}
-          className="absolute top-6 left-6 p-2 hover:bg-white rounded-lg transition-colors group"
-          title="Back to Landing Page"
-        >
-          <ArrowLeft className="w-5 h-5 text-slate-700 group-hover:text-cyan-600 transition-colors" />
+        <button className="auth-back" onClick={onBack} title="Back">
+          <ArrowLeft className="auth-icon" />
         </button>
       )}
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        {/* Left side - Branding */}
-        <div className="hidden lg:block">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 via-purple-400/20 to-orange-400/20 rounded-3xl blur-3xl"></div>
-            <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-12 border border-white shadow-2xl">
-              <div className="flex items-center gap-4 mb-8">
-                <AventoLogo size="lg" variant="icon-only" />
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 via-purple-600 to-orange-600 bg-clip-text text-transparent">
-                    CIVITA
-                  </h1>
-                  <p className="text-sm text-slate-500">Matchmaking the Sport of Friendships</p>
-                </div>
-              </div>
-              
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Trophy className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-slate-900 mb-1">Sports & Turf</h3>
-                    <p className="text-sm text-slate-600">
-                      Book turfs, create matches, and build lasting friendships through sports
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Music className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-slate-900 mb-1">Events</h3>
-                    <p className="text-sm text-slate-600">
-                      Discover concerts, festivals, and standout experiences with your community
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Gamepad2 className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-slate-900 mb-1">Gaming</h3>
-                    <p className="text-sm text-slate-600">
-                      Join gaming sessions, tournaments, and find your squad
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 p-4 bg-gradient-to-r from-cyan-50 to-purple-50 rounded-xl border border-cyan-200">
-                <p className="text-sm text-slate-700">
-                  ✨ Trust Scores • 🔥 Friendship Streaks • 💬 Real-time Chat • 🎯 Smart Matching
-                </p>
+      <section className="auth-layout">
+        <div className="auth-hero">
+          <div className="auth-brand-row">
+            <div className="auth-mark">
+              <div className="auth-mark-inner">
+                <Compass className="auth-icon" />
               </div>
             </div>
+            <div>
+              <p className="auth-kicker">Civita</p>
+              <h1 className="auth-title">Find your next circle.</h1>
+            </div>
+          </div>
+
+          <p className="auth-copy">
+            Browse the city first. When something feels worth showing up for, sign in to join,
+            chat, save your plans, and carry your trust score with you.
+          </p>
+
+          <div className="auth-preview-grid">
+            {previewItems.map(({ icon: Icon, label, meta, color }) => (
+              <div className="auth-preview-card" key={label}>
+                <div className="auth-preview-icon" style={{ background: `${color}18`, color }}>
+                  <Icon className="auth-icon" />
+                </div>
+                <p className="auth-preview-label">{label}</p>
+                <p className="auth-preview-meta">{meta}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="auth-signal-row">
+            <span className="auth-signal"><ShieldCheck className="auth-icon" /> Trust score ready</span>
+            <span className="auth-signal"><Users className="auth-icon" /> Real people nearby</span>
+            <span className="auth-signal"><MessageCircle className="auth-icon" /> Chats after joining</span>
           </div>
         </div>
 
-        {/* Right side - Auth form or Email Display */}
-        <div className="w-full">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-8">
+        <div className="auth-panel-wrap">
+          <div className="auth-panel">
             {user ? (
-              <div>
-                <div className="text-center mb-8">
-                  <div className="inline-block mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 via-purple-500 to-orange-500 rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-bold text-white">
-                        {(user.name || user.email).charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+              <>
+                <div className="auth-user-card">
+                  <div className="auth-avatar">{(user.name || user.email).charAt(0).toUpperCase()}</div>
+                  <div>
+                    <p className="auth-kicker">You are in</p>
+                    <h2 className="auth-panel-title">Welcome back</h2>
                   </div>
-                  <h2 className="mb-2 text-2xl font-bold">Welcome! 👋</h2>
-                  <div className="bg-gradient-to-r from-cyan-50 to-purple-50 rounded-lg p-4 mb-6 border border-cyan-200">
-                    <p className="text-sm text-slate-600 mb-1">Logged in as</p>
-                    <p className="text-lg font-semibold text-slate-900 break-all">{user.email}</p>
-                    {user.name && <p className="text-sm text-slate-600 mt-2">Name: {user.name}</p>}
-                  </div>
-                  <p className="text-slate-600 mb-6">You're all set! Click below to continue to the app.</p>
-                </div>
-                <Button
-                  type="button"
-                  onClick={onAuthSuccess}
-                  className="w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 hover:from-cyan-600 hover:via-purple-600 hover:to-orange-600 text-white mb-3"
-                >
-                  Continue to App
-                </Button>
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    await signOut();
-                    toast.success('Logged out successfully');
-                  }}
-                  variant="outline"
-                  className="w-full border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <div className="text-center mb-8">
-                  <h2 className="mb-2">Welcome Back!</h2>
-                  <p className="text-slate-600">Sign in to continue your journey</p>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-slate-200"></div>
-                    <span className="text-xs text-slate-500">AUTH OPTIONS</span>
-                    <div className="flex-1 h-px bg-slate-200"></div>
-                  </div>
+                <div className="auth-account-box">
+                  <p className="auth-account-label">Signed in as</p>
+                  <p className="auth-account-email">{user.email}</p>
+                </div>
 
-                  {/* Google Sign In Button */}
-                  <Button
+                <div className="auth-actions">
+                  <button className="auth-button auth-primary" type="button" onClick={onAuthSuccess}>
+                    Continue to Civita
+                  </button>
+                  <button
+                    className="auth-button auth-secondary"
                     type="button"
-                    onClick={handleGoogleSignIn}
-                    disabled={loading}
-                    className="w-full bg-white border-2 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
+                    onClick={async () => {
+                      await signOut();
+                      toast.success('Logged out successfully');
+                    }}
                   >
+                    <LogOut className="auth-icon" />
+                    Use another account
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="auth-pill">
+                  <LockKeyhole className="auth-icon" />
+                  Optional sign in
+                </div>
+
+                <h2 className="auth-panel-title">Join only when it clicks.</h2>
+                <p className="auth-panel-copy">
+                  No hard gate. Use an account when you want to join a plan, message a group,
+                  or save your profile across sports, events, and gaming.
+                </p>
+
+                <div className="auth-actions">
+                  <button className="auth-button auth-google" type="button" onClick={handleGoogleSignIn} disabled={loading}>
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Signing in...
+                        <Loader2 className="auth-icon animate-spin" />
+                        Opening sign in...
                       </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                          <image href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTIyLjU2IDEyLjI1YzAtLjYxLS4wNS0xLjIxLS4xNi0xLjc5SDEydjMuMzloNC44NGMtLjIgMS4wOC0uODIgMi4wMS0xLjc0IDIuNjF2Mi4xN2g0LjY5YzEuNjgtMS41NSAyLjY0LTMuODMgMi42NC02LjU5eiIgZmlsbD0iIzQyODVGNCIvPjxwYXRoIGQ9Ik0xMiAyMi41YzIuMjcgMCA0LjE3LS43NCA1LjU2LTIuMDNsLTQuNjktMy42MWMtLjc3LjUyLTEuNzcuODItMi44Ny44Mi0yLjIgMC00LjA2LTEuNDgtNC42OS0zLjQ3SDIuMTh2Mi4yM0MzLjU3IDIwLjc4IDcuNDMgMjIuNSAxMiAyMi41eiIgZmlsbD0iIzM0QTg1MyIvPjxwYXRoIGQ9Ik03LjMxIDE0LjdjLS40Ni0uMzItLjc2LS44Mi0uNzYtMS40M3MuMy0xLjExLjc2LTEuNDNWOS4wN0gyLjE4Yy0uNDQuODktLjcgMS45LS43IDIuOTdzLjI2IDIuMDguNyAyLjk3bDQuNDctMy4zN3oiIGZpbGw9IiNGQkJDMDQiLz48cGF0aCBkPSJNMTIgNS4zOGMxLjI0IDAgMi4zNS40MiAzLjIyIDEuMjRsNC4xOC00LjE4QzE2LjE2IDEuMDIgMTQuMTMgMCAxMiAwYy00LjU3IDAtOC40MyAxLjY5LTExLjM2IDQuNDdMNS4zIDcuMDdjLjYzLTEuOTkgMi40OS0zLjM2IDQuNy0zLjM2eiIgZmlsbD0iI0VBNDMzNSIvPjwvc3ZnPg==" width="24" height="24" />
-                        </svg>
-                        Sign in with Google
+                        <GoogleMark />
+                        Continue with Google
                       </>
                     )}
-                  </Button>
+                  </button>
 
-                  {/* Demo credentials - localhost only */}
                   {!import.meta.env.PROD && (
-                    <div className="space-y-3">
-                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-start gap-2 mb-2">
-                          <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-blue-900 mb-1">
-                              <strong>Try Demo Account (Shubh's Profile)</strong>
-                            </p>
-                            <p className="text-xs text-blue-700 font-mono">
-                              Email: demo@civita.com<br/>
-                              Password: demo123
-                            </p>
-                            <p className="text-xs text-blue-600 mt-2">
-                              ✨ Full access to all features with pre-loaded data
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button
-                        type="button"
-                        onClick={handleDemoLogin}
-                        disabled={loading || initializingDemo || !demoUserReady}
-                        variant="outline"
-                        className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
-                      >
-                        {initializingDemo ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Setting up demo...
-                          </>
-                        ) : !demoUserReady ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Preparing demo...
-                          </>
-                        ) : (
-                          '🎮 Try Demo Account'
-                        )}
-                      </Button>
-                    </div>
+                    <button
+                      className="auth-button auth-demo"
+                      type="button"
+                      onClick={handleDemoLogin}
+                      disabled={loading || initializingDemo || !demoUserReady}
+                    >
+                      <span className="auth-demo-text">
+                        <span className="auth-demo-title">
+                          {initializingDemo || !demoUserReady ? 'Preparing demo profile' : "Browse demo profile"}
+                        </span>
+                        <span className="auth-demo-sub">Full app access with sample activity. No setup needed.</span>
+                      </span>
+                      {initializingDemo || !demoUserReady ? <Loader2 className="auth-icon animate-spin" /> : <Zap className="auth-icon" />}
+                    </button>
                   )}
+
                 </div>
-              </div>
+
+                <div className="auth-unlocks">
+                  <p className="auth-unlocks-title">
+                    <CheckCircle2 className="auth-icon" />
+                    What unlocks after sign in
+                  </p>
+                  <div className="auth-unlocks-grid">
+                    <span>Join matches and rooms</span>
+                    <span>Message confirmed groups</span>
+                    <span>Save preferences</span>
+                    <span>Build trust history</span>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

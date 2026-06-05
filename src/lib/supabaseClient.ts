@@ -9,7 +9,20 @@ if (!supabaseEnabled) {
   console.warn('⚠️ DEMO MODE: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is not set. Using localStorage.');
 }
 
-export const supabase = supabaseEnabled ? createClient(supabaseUrl!, supabaseAnonKey!) : null;
+export const supabase = supabaseEnabled
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    })
+  : null;
 
 export async function uploadImage(file: File, options?: { bucket?: string; folder?: string }) {
   const bucket = options?.bucket || 'images';

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabaseAuth } from '../services/supabaseAuthService';
+import { supabaseAuth, usersService } from '../services/supabaseAuthService';
+import { supabase, supabaseEnabled } from './supabaseClient';
 
 interface User {
   id: string;
@@ -28,6 +29,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const isProduction = import.meta.env.PROD;
 
+  const buildUserFromAuth = async (authUser: any): Promise<User> => {
+    const fallback: User = {
+      id: authUser.id,
+      email: authUser.email || '',
+      name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+      age: authUser.user_metadata?.age ? String(authUser.user_metadata.age) : undefined,
+      phone: authUser.user_metadata?.phone,
+      profession: authUser.user_metadata?.profession,
+      onboarding_completed: authUser.user_metadata?.onboarding_completed || false,
+    };
+
+    if (!supabaseEnabled) {
+      return fallback;
+    }
+
+    const { data: profile } = await usersService.getUserProfile(authUser.id);
+    if (!profile) {
+      await usersService.createProfile({
+        id: authUser.id,
+        user_id: authUser.id,
+        email: authUser.email || '',
+        name: fallback.name,
+        avatar: authUser.user_metadata?.avatar_url,
+        onboarding_completed: fallback.onboarding_completed,
+      });
+      return fallback;
+    }
+
+    return {
+      ...fallback,
+      name: profile.name || fallback.name,
+      age: profile.age ? String(profile.age) : fallback.age,
+      phone: profile.phone || fallback.phone,
+      profession: profile.profession || fallback.profession,
+      onboarding_completed: Boolean(profile.onboarding_completed),
+    };
+  };
+
   useEffect(() => {
     // Clean up any OAuth error parameters from URL
     const params = new URLSearchParams(window.location.search);
@@ -36,27 +75,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // On localhost: Clear session on mount (force re-auth)
-    if (!isProduction) {
+    // Check if Supabase is configured - if yes, use real backend even on localhost
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+    // On localhost without Supabase: Clear session on mount (force re-auth)
+    if (!isProduction && !isSupabaseConfigured) {
       localStorage.removeItem('civita_current_user');
       setUser(null);
       setLoading(false);
       return;
     }
 
-    // On production: Listen for Supabase auth changes
-    const unsubscribe = supabaseAuth.onAuthStateChanged((authUser) => {
+    // On production OR localhost with Supabase configured: Listen for Supabase auth changes
+    const unsubscribe = supabaseAuth.onAuthStateChanged(async (authUser) => {
       if (authUser) {
-        const user: User = {
-          id: authUser.id,
-          email: authUser.email || '',
-          name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
-          age: authUser.user_metadata?.age,
-          phone: authUser.user_metadata?.phone,
-          profession: authUser.user_metadata?.profession,
-          onboarding_completed: authUser.user_metadata?.onboarding_completed || false,
-        };
-        setUser(user);
+        setUser(await buildUserFromAuth(authUser));
       } else {
         setUser(null);
       }
@@ -93,8 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user: User = {
           id: result.user.id,
           email: result.user.email || '',
-          name: result.user.user_metadata?.full_name || email.split('@')[0],
-          age: result.user.user_metadata?.age,
+          name: result.user.user_metadata?.full_name || result.user.user_metadata?.name || email.split('@')[0],
+          age: result.user.user_metadata?.age ? String(result.user.user_metadata.age) : undefined,
           phone: result.user.user_metadata?.phone,
           profession: result.user.user_metadata?.profession,
           onboarding_completed: result.user.user_metadata?.onboarding_completed || false,
@@ -167,6 +202,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
+
+      if (supabaseEnabled && supabase) {
+        usersService.updateUserProfile(user.id, updates);
+        supabase.auth.updateUser({
+          data: {
+            full_name: updates.name || updatedUser.name,
+            age: updates.age || updatedUser.age,
+            phone: updates.phone || updatedUser.phone,
+            profession: updates.profession || updatedUser.profession,
+            onboarding_completed: updates.onboarding_completed ?? updatedUser.onboarding_completed,
+          },
+        });
+      }
       
       // Update localStorage for demo mode
       const currentUser = localStorage.getItem('civita_current_user');

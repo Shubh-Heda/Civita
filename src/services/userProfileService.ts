@@ -8,10 +8,13 @@ export const userProfileService = {
   async upsertProfile(userId: string, userData: {
     email: string;
     full_name?: string;
+    name?: string;
     avatar_url?: string;
+    avatar?: string;
     age?: string;
     phone?: string;
     profession?: string;
+    onboarding_completed?: boolean;
   }) {
     if (!supabaseEnabled || !supabase) {
       console.warn('Supabase not configured');
@@ -25,16 +28,16 @@ export const userProfileService = {
           id: userId,
           user_id: userId,
           email: userData.email,
-          full_name: userData.full_name || userData.email.split('@')[0],
-          avatar_url: userData.avatar_url || `https://i.pravatar.cc/150?u=${userId}`,
+          name: userData.name || userData.full_name || userData.email.split('@')[0],
+          avatar: userData.avatar || userData.avatar_url || `https://i.pravatar.cc/150?u=${userId}`,
           age: userData.age,
           phone: userData.phone,
           profession: userData.profession,
-          onboarding_completed: false,
+          onboarding_completed: userData.onboarding_completed ?? false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id'
+          onConflict: 'id'
         })
         .select()
         .single();
@@ -59,7 +62,7 @@ export const userProfileService = {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (error) throw error;
@@ -76,13 +79,23 @@ export const userProfileService = {
     }
 
     try {
+      const normalized = { ...updates };
+      if (normalized.full_name && !normalized.name) {
+        normalized.name = normalized.full_name;
+      }
+      if (normalized.avatar_url && !normalized.avatar) {
+        normalized.avatar = normalized.avatar_url;
+      }
+      delete normalized.full_name;
+      delete normalized.avatar_url;
+
       const { data, error } = await supabase
         .from('profiles')
         .update({
-          ...updates,
+          ...normalized,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', userId)
+        .eq('id', userId)
         .select()
         .single();
 

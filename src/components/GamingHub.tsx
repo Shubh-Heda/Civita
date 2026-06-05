@@ -19,7 +19,6 @@ import { AventoLogo } from './AventoLogo';
 import { CreateGamingSessionModal } from './CreateGamingSessionModal';
 import { GamingSessionCard } from './GamingSessionCard';
 import { UpcomingItemsSection } from './UpcomingItemsSection';
-import { FirstTimeUserGuide } from './FirstTimeUserGuide';
 import { toast } from 'sonner';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { GlobalSearch } from './GlobalSearch';
@@ -38,7 +37,6 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
   const [userBio, setUserBio] = useState('Pro gamer | FIFA Champion | Making friends through gaming 🎮');
   const [favoriteGames, setFavoriteGames] = useState(['FIFA 24', 'Valorant', 'COD MW3']);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [showFirstTimeGuide, setShowFirstTimeGuide] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'home' | 'clubs' | 'sessions' | 'tournaments' | 'profile'>('home');
   const [gamingClubs, setGamingClubs] = useState<GamingClub[]>([]);
@@ -56,11 +54,6 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
     loadData();
     gamingService.initMockTournaments();
     
-    // Check if user is new (first time visiting gaming hub)
-    const hasSeenGuide = localStorage.getItem('civta_gaming_guide_completed');
-    if (!hasSeenGuide) {
-      setShowFirstTimeGuide(true);
-    }
   }, []);
 
   const loadData = async () => {
@@ -150,14 +143,6 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden pb-20 bg-white">
-      {/* First Time User Guide */}
-      {showFirstTimeGuide && (
-        <FirstTimeUserGuide 
-          onClose={() => setShowFirstTimeGuide(false)}
-          category="gaming"
-        />
-      )}
-      
       {/* Content Wrapper */}
       <div className="relative z-10">
         {/* Top Navigation Bar */}
@@ -177,16 +162,6 @@ export function GamingHub({ onNavigate }: GamingHubProps) {
 
             {/* Middle Navigation Buttons */}
             <div className="hidden lg:flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowFirstTimeGuide(true)}
-                className="gap-2 hover:bg-cyan-50"
-                title="Show Tutorial"
-              >
-                <HelpCircle className="w-4 h-4" />
-                Guide
-              </Button>
               <Button 
                 variant="ghost" 
                 size="sm"
