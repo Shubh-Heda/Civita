@@ -8,7 +8,6 @@ import { LandingPage } from './pages/LandingPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { CommunityPage } from './pages/CommunityPage';
 import { AuthPage } from './components/AuthPage';
-import { OnboardingForm } from './components/OnboardingForm';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Footer } from './components/Footer';
 // Lazy load all non-critical components for better performance
@@ -59,7 +58,7 @@ import { supabaseEnabled } from './lib/supabaseClient';
 import { MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
 
-type Page = 'landing' | 'explore' | 'community' | 'warm-onboarding' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community-feed' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'match-history' | 'help' | 'availability' | 'comprehensive-dashboard' | 'map-view';
+type Page = 'landing' | 'explore' | 'community' | 'auth' | 'dashboard' | 'events-dashboard' | 'gaming-hub' | 'gaming-profile' | 'gaming-community' | 'gaming-chat' | 'gaming-map' | 'gaming-events' | 'sports-events' | 'events-events' | 'sports-photos' | 'events-photos' | 'gaming-photos' | 'sports-highlights' | 'events-highlights' | 'gaming-highlights' | 'sports-memories' | 'events-memories' | 'gaming-memories' | 'profile' | 'events-profile' | 'community-feed' | 'sports-community' | 'cultural-community' | 'reflection' | 'finder' | 'discovery' | 'create-match' | 'create-event-booking' | 'turf-detail' | 'chat' | 'sports-chat' | 'events-chat' | 'group-chat' | 'dm-chat' | 'modern-chat' | 'match-history' | 'help' | 'availability' | 'comprehensive-dashboard' | 'map-view';
 
 interface UserProfile {
   name: string;
@@ -226,13 +225,6 @@ function AppContent() {
     setEventsProfile(updatedProfile);
   }, []);
 
-  // Update profiles when user logs in with onboarded data
-  useEffect(() => {
-    if (user?.onboarding_completed) {
-      updateProfiles(user);
-    }
-  }, [user?.onboarding_completed, user?.name, updateProfiles]);
-  
   // Initialize backend on app mount
   useEffect(() => {
     const initBackend = async () => {
@@ -878,25 +870,6 @@ await realGroupChatService.sendMessage(
   // Show auth page if user clicked get started but not logged in
   if (!user && currentPage === 'auth') {
     return <AuthPage onAuthSuccess={handleAuthSuccess} onBack={() => navigateTo('landing')} />;
-  }
-
-  // Show onboarding form if user is logged in but hasn't completed onboarding
-  if (user && !user.onboarding_completed && currentPage !== 'landing') {
-    return (
-      <OnboardingForm 
-        onComplete={() => {
-          if (pendingCategory === 'gaming') {
-            navigateTo('gaming-hub');
-          } else if (pendingCategory === 'events') {
-            navigateTo('events-dashboard');
-          } else if (pendingCategory === 'parties') {
-            navigateTo('events-dashboard');
-          } else {
-            navigateTo('dashboard');
-          }
-        }}
-      />
-    );
   }
 
   return (
