@@ -1,820 +1,316 @@
 /**
- * Real Group Chat Service - Using Supabase
- * Full implementation for real-time group messaging, invites, and member management
+ * Real Group Chat Service
+ * Tables:
+ *   conversations        { id, type, name, is_archived, created_at, updated_at }
+ *   conversation_members { id, conversation_id, user_id, role, joined_at }
+ *   messages             { id, conversation_id, sender_id, content, message_type, is_deleted, created_at, updated_at }
+ *   profiles             { id, name, email, avatar, ... }
  */
 
 import { supabase, supabaseEnabled } from '../lib/supabaseClient';
 
 export interface RealGroupChat {
   id: string;
-  match_id?: string;
-  event_id?: string;
+  type?: string;
+  chat_type?: string;
   name: string;
-  description?: string;
-  created_by: string;
+  is_archived?: boolean;
   created_at: string;
   updated_at: string;
+  match_id?: string;
+  event_id?: string;
+  description?: string;
+  created_by?: string;
 }
 
 export interface ChatMessage {
   id: string;
-  group_chat_id: string;
+  conversation_id: string;
   sender_id: string;
-  sender_name: string;
+  sender_name?: string;
   sender_avatar?: string;
   content: string;
   message_type: 'text' | 'system' | 'invite' | 'payment';
+  is_deleted?: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface ChatMember {
   id: string;
-  group_chat_id: string;
+  conversation_id: string;
+  group_chat_id?: string;
   user_id: string;
-  user_name: string;
-  user_email: string;
+  user_name?: string;
+  user_email?: string;
   user_avatar?: string;
   role: 'admin' | 'member';
   joined_at: string;
-  is_active: boolean;
 }
 
-export interface ChatInvite {
-  id: string;
-  group_chat_id: string;
-  invited_by: string;
-  invited_email: string;
-  token: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  created_at: string;
-  expires_at: string;
+// ── localStorage fallback ─────────────────────────────────────
+const LS = {
+  chats: (): any[] => JSON.parse(localStorage.getItem('local_group_chats') || '[]'),
+  saveChats: (v: any[]) => localStorage.setItem('local_group_chats', JSON.stringify(v)),
+  members: (): any[] => JSON.parse(localStorage.getItem('local_chat_members') || '[]'),
+  saveMembers: (v: any[]) => localStorage.setItem('local_chat_members', JSON.stringify(v)),
+  messages: (): any[] => JSON.parse(localStorage.getItem('local_chat_messages') || '[]'),
+  saveMessages: (v: any[]) => localStorage.setItem('local_chat_messages', JSON.stringify(v)),
+};
+
+// ── Profile cache ─────────────────────────────────────────────
+const profileCache: Record<string, { name: string; avatar?: string; email?: string }> = {};
+
+async function resolveProfile(userId: string): Promise<{ name: string; avatar?: string; email?: string }> {
+  if (profileCache[userId]) return profileCache[userId];
+  if (!supabase) return { name: 'User' };
+  const { data } = await supabase.from('profiles').select('name, avatar, email').eq('id', userId).maybeSingle();
+  const result = { name: data?.name || 'User', avatar: data?.avatar, email: data?.email };
+  profileCache[userId] = result;
+  return result;
 }
 
 export class RealGroupChatService {
-  /**
-   * Create a new group chat for a match
-   */
+
   async createGroupChat(
-    matchId: string,
-    chatName: string,
-    description: string,
-    createdById: string,
-    createdByName: string,
-    createdByEmail: string
+    matchId: string, chatName: string, description: string,
+    createdById: string, createdByName: string, createdByEmail: string
   ): Promise<RealGroupChat> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        // Demo mode: persist to localStorage so UI can load the chat immediately
-        const chats = JSON.parse(localStorage.getItem('local_group_chats') || '[]');
-        const chat = {
-          id: matchId,
-          match_id: matchId,
-          name: chatName,
-          description,
-          created_by: createdById,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        chats.push(chat);
-        localStorage.setItem('local_group_chats', JSON.stringify(chats));
-
-        // Add creator as admin member locally
-        const members = JSON.parse(localStorage.getItem('local_chat_members') || '[]');
-        members.push({
-          id: `${chat.id}-member-${createdById}`,
-          group_chat_id: chat.id,
-          user_id: createdById,
-          user_name: createdByName,
-          user_email: createdByEmail,
-          role: 'admin',
-          joined_at: new Date().toISOString(),
-          is_active: true,
-        });
-        localStorage.setItem('local_chat_members', JSON.stringify(members));
-
-        // Send a welcome system message locally
-        const messages = JSON.parse(localStorage.getItem('local_chat_messages') || '[]');
-        messages.push({
-          id: `${chat.id}-msg-1`,
-          group_chat_id: chat.id,
-          sender_id: 'system',
-          sender_name: 'System',
-          content: `${createdByName} created the chat for ${chatName}`,
-          message_type: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        localStorage.setItem('local_chat_messages', JSON.stringify(messages));
-
-        console.log('✅ (Demo) Group chat created:', chatName);
-        return chat;
-      }
-
-      const { data: chat, error } = await supabase
-        .from('group_chats')
-        .insert([
-          {
-            match_id: matchId,
-            name: chatName,
-            description,
-            created_by: createdById,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Add creator as admin member
-      await this.addMember(chat.id, createdById, 'admin', createdByName, createdByEmail);
-
-      console.log('✅ Group chat created:', chatName);
+    if (!supabaseEnabled || !supabase) {
+      const chat: any = {
+        id: matchId, name: chatName, type: 'group', chat_type: 'group',
+        created_by: createdById, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      };
+      LS.saveChats([...LS.chats(), chat]);
+      LS.saveMembers([...LS.members(), {
+        id: `${matchId}-m-${createdById}`, conversation_id: matchId, group_chat_id: matchId,
+        user_id: createdById, user_name: createdByName, role: 'admin', joined_at: new Date().toISOString(),
+      }]);
+      this._localMsg(matchId, createdById, createdByName, `${createdByName} created the group`, 'system');
       return chat;
-    } catch (error) {
-      console.error('Error creating group chat:', error);
-      throw error;
     }
+    // Try inserting with match_id; fall back without it if column doesn't exist
+    let chat: any;
+    const tryInsert = async (payload: any) => {
+      const { data, error } = await supabase!.from('conversations').insert([payload]).select().single();
+      return { data, error };
+    };
+    let result = await tryInsert({ name: chatName, type: 'group', match_id: matchId });
+    if (result.error) {
+      if (result.error.message?.includes('match_id') || result.error.message?.includes('column')) {
+        result = await tryInsert({ name: chatName, type: 'group' });
+      }
+      if (result.error) throw result.error;
+    }
+    chat = result.data;
+    await this.addMember(chat.id, createdById, 'admin');
+    return { ...chat, chat_type: chat.type };
   }
 
-  /**
-   * Get group chat by ID
-   */
   async getGroupChat(chatId: string): Promise<RealGroupChat | null> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        const chats = JSON.parse(localStorage.getItem('local_group_chats') || '[]');
-        return chats.find((c: any) => c.id === chatId) || null;
-      }
-
-      const { data, error } = await supabase
-        .from('group_chats')
-        .select('*')
-        .eq('id', chatId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || null;
-    } catch (error) {
-      console.error('Error getting group chat:', error);
-      return null;
-    }
+    if (!supabaseEnabled || !supabase) return LS.chats().find((c: any) => c.id === chatId) || null;
+    const { data } = await supabase.from('conversations').select('*').eq('id', chatId).single();
+    return data ? { ...data, chat_type: data.type } : null;
   }
 
-  /**
-   * Get group chat by match ID
-   */
-  async getGroupChatByMatchId(matchId: string): Promise<RealGroupChat | null> {
-    try {
-      if (!supabaseEnabled || !supabase) return null;
-
-      const { data, error } = await supabase
-        .from('group_chats')
-        .select('*')
-        .eq('match_id', matchId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || null;
-    } catch (error) {
-      console.error('Error getting group chat by match ID:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Add member to group chat
-   */
   async addMember(
-    groupChatId: string,
-    userId: string,
-    role: 'admin' | 'member' = 'member',
-    userName: string = 'User',
-    userEmail: string = 'user@example.com'
+    conversationId: string, userId: string, role: 'admin' | 'member' = 'member',
+    userName?: string, _userEmail?: string
   ): Promise<ChatMember> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        // Demo mode: store member locally
-        const members = JSON.parse(localStorage.getItem('local_chat_members') || '[]');
-        const existing = members.find((m: any) => m.group_chat_id === groupChatId && m.user_id === userId);
-        if (existing) {
-          existing.is_active = true;
-          localStorage.setItem('local_chat_members', JSON.stringify(members));
-          return existing;
-        }
-
-        const member = {
-          id: `${groupChatId}-member-${userId}`,
-          group_chat_id: groupChatId,
-          user_id: userId,
-          user_name: userName,
-          user_email: userEmail,
-          role,
-          joined_at: new Date().toISOString(),
-          is_active: true,
-        };
-        members.push(member);
-        localStorage.setItem('local_chat_members', JSON.stringify(members));
-
-        // Send system message locally
-        await this.sendMessage(groupChatId, 'system', 'System', `${userName} joined the chat 👋`, 'system');
-
-        return member;
-      }
-
-      // Check if member already exists
-      const { data: existing } = await supabase
-        .from('chat_members')
-        .select('*')
-        .eq('group_chat_id', groupChatId)
-        .eq('user_id', userId)
-        .single();
-
-      if (existing) {
-        // Update if already a member
-        const { data: updated, error } = await supabase
-          .from('chat_members')
-          .update({ is_active: true })
-          .eq('id', existing.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        return updated;
-      }
-
-      // Add new member
-      const { data: member, error } = await supabase
-        .from('chat_members')
-        .insert([
-          {
-            group_chat_id: groupChatId,
-            user_id: userId,
-            user_name: userName,
-            user_email: userEmail,
-            role,
-            joined_at: new Date().toISOString(),
-            is_active: true,
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Send system message
-      await this.sendMessage(
-        groupChatId,
-        'system',
-        'System',
-        `${userName} joined the chat 👋`,
-        'system'
-      );
-
-      return member;
-    } catch (error) {
-      console.error('Error adding member:', error);
-      throw error;
+    if (!supabaseEnabled || !supabase) {
+      const members = LS.members();
+      const ex = members.find((m: any) => m.conversation_id === conversationId && m.user_id === userId);
+      if (ex) return ex;
+      const m = {
+        id: `${conversationId}-m-${userId}`, conversation_id: conversationId, group_chat_id: conversationId,
+        user_id: userId, user_name: userName || 'User',
+        role, joined_at: new Date().toISOString(),
+      };
+      LS.saveMembers([...members, m]);
+      return m;
     }
+    // Check if already a member
+    const { data: existing } = await supabase.from('conversation_members').select('*')
+      .eq('conversation_id', conversationId).eq('user_id', userId).maybeSingle();
+    if (existing) return { ...existing, group_chat_id: conversationId };
+    const { data: member, error } = await supabase.from('conversation_members')
+      .insert([{ conversation_id: conversationId, user_id: userId, role, joined_at: new Date().toISOString() }])
+      .select().single();
+    if (error) throw error;
+    return { ...member, group_chat_id: conversationId };
   }
 
-  /**
-   * Remove member from group chat
-   */
-  async removeMember(groupChatId: string, userId: string): Promise<void> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        throw new Error('Supabase not configured');
-      }
-
-      const { error: memberError } = await supabase
-        .from('chat_members')
-        .update({ is_active: false })
-        .eq('group_chat_id', groupChatId)
-        .eq('user_id', userId);
-
-      if (memberError) throw memberError;
-
-      // Get member name for system message
-      const { data: member } = await supabase
-        .from('chat_members')
-        .select('user_name')
-        .eq('group_chat_id', groupChatId)
-        .eq('user_id', userId)
-        .single();
-
-      if (member) {
-        await this.sendMessage(
-          groupChatId,
-          'system',
-          'System',
-          `${member.user_name} left the chat`,
-          'system'
-        );
-      }
-    } catch (error) {
-      console.error('Error removing member:', error);
-      throw error;
-    }
+  async addMemberToChat(conversationId: string, userId: string): Promise<void> {
+    await this.addMember(conversationId, userId, 'member');
   }
 
-  /**
-   * Send message to group chat
-   */
+  async removeMember(conversationId: string, userId: string): Promise<void> {
+    if (!supabaseEnabled || !supabase) return;
+    await supabase.from('conversation_members')
+      .delete().eq('conversation_id', conversationId).eq('user_id', userId);
+  }
+
+  async getMembers(conversationId: string): Promise<ChatMember[]> {
+    if (!supabaseEnabled || !supabase) {
+      return LS.members().filter((m: any) => m.conversation_id === conversationId);
+    }
+    const { data, error } = await supabase.from('conversation_members').select('*')
+      .eq('conversation_id', conversationId).order('joined_at', { ascending: true });
+    if (error) return [];
+    const enriched = await Promise.all((data || []).map(async (m: any) => {
+      const profile = await resolveProfile(m.user_id);
+      return { ...m, group_chat_id: conversationId, user_name: profile.name, user_avatar: profile.avatar, user_email: profile.email };
+    }));
+    return enriched;
+  }
+
   async sendMessage(
-    groupChatId: string,
-    senderId: string,
-    senderName: string,
-    content: string,
-    messageType: 'text' | 'system' | 'invite' | 'payment' = 'text',
+    conversationId: string, senderId: string, senderName: string,
+    content: string, messageType: 'text' | 'system' | 'invite' | 'payment' = 'text',
     senderAvatar?: string
   ): Promise<ChatMessage> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        // Store message locally
-        const messages = JSON.parse(localStorage.getItem('local_chat_messages') || '[]');
-        const messageObj = {
-          id: `${groupChatId}-msg-${messages.length + 1}`,
-          group_chat_id: groupChatId,
-          sender_id: senderId,
-          sender_name: senderName,
-          sender_avatar: senderAvatar,
-          content,
-          message_type: messageType,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        messages.push(messageObj);
-        localStorage.setItem('local_chat_messages', JSON.stringify(messages));
-        console.log('✅ (Demo) Message stored');
-        return messageObj;
-      }
-
-      const now = new Date().toISOString();
-      const { data: message, error } = await supabase
-        .from('chat_messages')
-        .insert([
-          {
-            group_chat_id: groupChatId,
-            sender_id: senderId,
-            sender_name: senderName,
-            sender_avatar: senderAvatar,
-            content,
-            message_type: messageType,
-            created_at: now,
-            updated_at: now,
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Update group chat updated_at
-      await supabase
-        .from('group_chats')
-        .update({ updated_at: now })
-        .eq('id', groupChatId);
-
-      console.log('✅ Message sent');
-      return message;
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get all messages in a group chat
-   */
-  async getMessages(groupChatId: string, limit: number = 100): Promise<ChatMessage[]> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        const messages = JSON.parse(localStorage.getItem('local_chat_messages') || '[]');
-        return (messages.filter((m: any) => m.group_chat_id === groupChatId) || []).slice(-limit);
-      }
-
-      const { data: messages, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('group_chat_id', groupChatId)
-        .order('created_at', { ascending: true })
-        .limit(limit);
-
-      if (error) throw error;
-      return messages || [];
-    } catch (error) {
-      console.error('Error getting messages:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get all members of a group chat
-   */
-  async getMembers(groupChatId: string): Promise<ChatMember[]> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        const members = JSON.parse(localStorage.getItem('local_chat_members') || '[]');
-        return (members.filter((m: any) => m.group_chat_id === groupChatId && m.is_active) || []);
-      }
-
-      const { data: members, error } = await supabase
-        .from('chat_members')
-        .select('*')
-        .eq('group_chat_id', groupChatId)
-        .eq('is_active', true)
-        .order('joined_at', { ascending: true });
-
-      if (error) throw error;
-      return members || [];
-    } catch (error) {
-      console.error('Error getting members:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Send invite to a user
-   */
-  async sendInvite(
-    groupChatId: string,
-    invitedEmail: string,
-    invitedById: string
-  ): Promise<ChatInvite> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        throw new Error('Supabase not configured');
-      }
-
-      const token = Math.random().toString(36).substr(2, 32);
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
-
-      const { data: invite, error } = await supabase
-        .from('chat_invites')
-        .insert([
-          {
-            group_chat_id: groupChatId,
-            invited_by: invitedById,
-            invited_email: invitedEmail,
-            token,
-            status: 'pending',
-            created_at: new Date().toISOString(),
-            expires_at: expiresAt.toISOString(),
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Send system message about invite
-      await this.sendMessage(
-        groupChatId,
-        'system',
-        'System',
-        `Invite sent to ${invitedEmail} 📧`,
-        'invite'
-      );
-
-      console.log('✅ Invite sent to:', invitedEmail);
-      return invite;
-    } catch (error) {
-      console.error('Error sending invite:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Accept invite and join group chat
-   */
-  async acceptInvite(
-    inviteToken: string,
-    userId: string,
-    userName: string,
-    userEmail: string
-  ): Promise<{ success: boolean; groupChatId?: string; error?: string }> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        throw new Error('Supabase not configured');
-      }
-
-      // Get invite
-      const { data: invite, error: inviteError } = await supabase
-        .from('chat_invites')
-        .select('*')
-        .eq('token', inviteToken)
-        .eq('status', 'pending')
-        .single();
-
-      if (inviteError || !invite) {
-        return { success: false, error: 'Invalid or expired invite' };
-      }
-
-      // Check if invite is expired
-      if (new Date(invite.expires_at) < new Date()) {
-        return { success: false, error: 'Invite has expired' };
-      }
-
-      // Add user as member
-      await this.addMember(
-        invite.group_chat_id,
-        userId,
-        'member',
-        userName,
-        userEmail
-      );
-
-      // Mark invite as accepted
-      await supabase
-        .from('chat_invites')
-        .update({ status: 'accepted' })
-        .eq('id', invite.id);
-
-      return { success: true, groupChatId: invite.group_chat_id };
-    } catch (error) {
-      console.error('Error accepting invite:', error);
-      return { success: false, error: String(error) };
-    }
-  }
-
-  /**
-   * Get pending invites for a group chat
-   */
-  async getPendingInvites(groupChatId: string): Promise<ChatInvite[]> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        const invites = JSON.parse(localStorage.getItem('local_chat_invites') || '[]');
-        return (invites.filter((i: any) => i.group_chat_id === groupChatId && i.status === 'pending') || []);
-      }
-
-      const { data: invites, error } = await supabase
-        .from('chat_invites')
-        .select('*')
-        .eq('group_chat_id', groupChatId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return invites || [];
-    } catch (error) {
-      console.error('Error getting pending invites:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Subscribe to real-time messages
-   */
-  subscribeToMessages(
-    groupChatId: string,
-    callback: (messages: ChatMessage[]) => void
-  ): (() => void) {
     if (!supabaseEnabled || !supabase) {
-      return () => {};
+      return this._localMsg(conversationId, senderId, senderName, content, messageType, senderAvatar);
     }
-
-    const subscription = supabase
-      .from(`chat_messages:group_chat_id=eq.${groupChatId}`)
-      .on('*', (payload) => {
-        // Fetch fresh messages on any change
-        this.getMessages(groupChatId).then(callback);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeSubscription(subscription);
-    };
+    const now = new Date().toISOString();
+    const { data: message, error } = await supabase.from('messages')
+      .insert([{ conversation_id: conversationId, sender_id: senderId, content, message_type: messageType, created_at: now, updated_at: now }])
+      .select().single();
+    if (error) throw error;
+    await supabase.from('conversations').update({ updated_at: now }).eq('id', conversationId);
+    return { ...message, sender_name: senderName, sender_avatar: senderAvatar };
   }
 
-  /**
-   * Subscribe to real-time members
-   */
-  subscribeToMembers(
-    groupChatId: string,
-    callback: (members: ChatMember[]) => void
-  ): (() => void) {
+  private _localMsg(
+    conversationId: string, senderId: string, senderName: string,
+    content: string, messageType: any, senderAvatar?: string
+  ): ChatMessage {
+    const msg: ChatMessage = {
+      id: `${conversationId}-msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      conversation_id: conversationId, sender_id: senderId,
+      sender_name: senderName, sender_avatar: senderAvatar,
+      content, message_type: messageType, created_at: new Date().toISOString(),
+    };
+    LS.saveMessages([...LS.messages(), msg]);
+    return msg;
+  }
+
+  async getMessages(conversationId: string, limit = 100): Promise<ChatMessage[]> {
     if (!supabaseEnabled || !supabase) {
-      return () => {};
+      return LS.messages().filter((m: any) => m.conversation_id === conversationId).slice(-limit);
     }
-
-    const subscription = supabase
-      .from(`chat_members:group_chat_id=eq.${groupChatId}`)
-      .on('*', (payload) => {
-        // Fetch fresh members on any change
-        this.getMembers(groupChatId).then(callback);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeSubscription(subscription);
-    };
+    const { data, error } = await supabase.from('messages').select('*')
+      .eq('conversation_id', conversationId).eq('is_deleted', false)
+      .order('created_at', { ascending: true }).limit(limit);
+    if (error) return [];
+    const enriched = await Promise.all((data || []).map(async (msg: any) => {
+      const profile = await resolveProfile(msg.sender_id);
+      return { ...msg, sender_name: profile.name, sender_avatar: profile.avatar };
+    }));
+    return enriched;
   }
 
-  /**
-   * Get user's group chats
-   */
+  subscribeToMessages(conversationId: string, callback: (messages: ChatMessage[]) => void): () => void {
+    if (!supabaseEnabled || !supabase) return () => {};
+    const channel = supabase.channel(`msgs-${conversationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      }, async () => {
+        const fresh = await this.getMessages(conversationId);
+        callback(fresh);
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }
+
+  subscribeToMembers(conversationId: string, callback: (members: ChatMember[]) => void): () => void {
+    if (!supabaseEnabled || !supabase) return () => {};
+    const channel = supabase.channel(`mems-${conversationId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'conversation_members',
+        filter: `conversation_id=eq.${conversationId}`,
+      }, async () => {
+        const fresh = await this.getMembers(conversationId);
+        callback(fresh);
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }
+
   async getUserGroupChats(userId: string): Promise<RealGroupChat[]> {
-    try {
-      if (!supabaseEnabled || !supabase) return [];
-
-      const { data: members, error } = await supabase
-        .from('chat_members')
-        .select('group_chat_id')
-        .eq('user_id', userId)
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      if (!members || members.length === 0) return [];
-
-      const chatIds = members.map(m => m.group_chat_id);
-      const { data: chats, error: chatsError } = await supabase
-        .from('group_chats')
-        .select('*')
-        .in('id', chatIds)
-        .order('updated_at', { ascending: false });
-
-      if (chatsError) throw chatsError;
-      return chats || [];
-    } catch (error) {
-      console.error('Error getting user chats:', error);
-      return [];
+    if (!supabaseEnabled || !supabase) {
+      const ids = LS.members().filter((m: any) => m.user_id === userId).map((m: any) => m.conversation_id);
+      return LS.chats().filter((c: any) => ids.includes(c.id));
     }
+    const { data: mems, error } = await supabase.from('conversation_members')
+      .select('conversation_id').eq('user_id', userId);
+    if (error || !mems?.length) return [];
+    const ids = mems.map((m: any) => m.conversation_id);
+    const { data: chats } = await supabase.from('conversations').select('*')
+      .in('id', ids).order('updated_at', { ascending: false });
+    return (chats || []).map((c: any) => ({ ...c, chat_type: c.type }));
   }
 
-  /**
-   * Find a personal (1:1) chat between two users.
-   * Returns the chat if exists, otherwise null.
-   */
   async getPersonalChatBetween(userA: string, userB: string): Promise<RealGroupChat | null> {
-    try {
-      if (!supabaseEnabled || !supabase) {
-        const chats = JSON.parse(localStorage.getItem('local_group_chats') || '[]');
-        // personal chats are those without match_id/event_id and with exactly 2 members including both users
-        const members = JSON.parse(localStorage.getItem('local_chat_members') || '[]');
-        for (const c of chats) {
-          if (c.match_id || c.event_id) continue;
-          const m = members.filter((mm: any) => mm.group_chat_id === c.id && mm.is_active).map((mm: any) => mm.user_id);
-          if (m.length === 2 && m.includes(userA) && m.includes(userB)) return c;
-        }
-        return null;
+    if (!supabaseEnabled || !supabase) {
+      for (const c of LS.chats()) {
+        const ids = LS.members().filter((m: any) => m.conversation_id === c.id).map((m: any) => m.user_id);
+        if (ids.length === 2 && ids.includes(userA) && ids.includes(userB)) return c;
       }
-
-      // Get all chats for userA
-      const { data: memberships, error: memErr } = await supabase
-        .from('chat_members')
-        .select('group_chat_id')
-        .eq('user_id', userA)
-        .eq('is_active', true);
-
-      if (memErr) throw memErr;
-      if (!memberships || memberships.length === 0) return null;
-
-      const chatIds = memberships.map((m: any) => m.group_chat_id);
-      // For each chat, check if userB is member and members count === 2
-      for (const id of chatIds) {
-        const { data: membs, error: mErr } = await supabase
-          .from('chat_members')
-          .select('*')
-          .eq('group_chat_id', id)
-          .eq('is_active', true);
-        if (mErr) throw mErr;
-        if (!membs) continue;
-        const ids = membs.map((mm: any) => mm.user_id);
-        if (ids.length === 2 && ids.includes(userB) && ids.includes(userA)) {
-          const { data: chat, error: chatErr } = await supabase
-            .from('group_chats')
-            .select('*')
-            .eq('id', id)
-            .single();
-          if (chatErr) throw chatErr;
-          return chat || null;
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error finding personal chat:', error);
       return null;
     }
+    const { data: mems } = await supabase.from('conversation_members')
+      .select('conversation_id').eq('user_id', userA);
+    if (!mems?.length) return null;
+    for (const { conversation_id } of mems) {
+      const { data: all } = await supabase.from('conversation_members')
+        .select('user_id').eq('conversation_id', conversation_id);
+      const ids = (all || []).map((m: any) => m.user_id);
+      if (ids.length === 2 && ids.includes(userA) && ids.includes(userB)) {
+        const { data: chat } = await supabase.from('conversations').select('*').eq('id', conversation_id).single();
+        return chat ? { ...chat, chat_type: chat.type } : null;
+      }
+    }
+    return null;
   }
 
-  /**
-   * Create a personal (1:1) chat between two users.
-   */
   async createPersonalChat(
-    userAId: string,
-    userAName: string,
-    userAEmail: string,
-    userBId: string,
-    userBName: string,
-    userBEmail: string
+    userAId: string, userAName: string, userAEmail: string,
+    userBId: string, userBName: string, userBEmail: string
   ): Promise<RealGroupChat> {
-    try {
-      // canonical id to reduce duplicates in demo mode
-      const id = `personal-${[userAId, userBId].sort().join('-')}-${Date.now()}`;
-      const name = `${userAName} & ${userBName}`;
-
-      if (!supabaseEnabled || !supabase) {
-        const chats = JSON.parse(localStorage.getItem('local_group_chats') || '[]');
-        const chat = {
-          id,
-          name,
-          created_by: userAId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        chats.push(chat);
-        localStorage.setItem('local_group_chats', JSON.stringify(chats));
-
-        const members = JSON.parse(localStorage.getItem('local_chat_members') || '[]');
-        members.push({
-          id: `${chat.id}-member-${userAId}`,
-          group_chat_id: chat.id,
-          user_id: userAId,
-          user_name: userAName,
-          user_email: userAEmail,
-          role: 'member',
-          joined_at: new Date().toISOString(),
-          is_active: true,
-        });
-        members.push({
-          id: `${chat.id}-member-${userBId}`,
-          group_chat_id: chat.id,
-          user_id: userBId,
-          user_name: userBName,
-          user_email: userBEmail,
-          role: 'member',
-          joined_at: new Date().toISOString(),
-          is_active: true,
-        });
-        localStorage.setItem('local_chat_members', JSON.stringify(members));
-
-        // initial system message
-        const messages = JSON.parse(localStorage.getItem('local_chat_messages') || '[]');
-        messages.push({
-          id: `${chat.id}-msg-1`,
-          group_chat_id: chat.id,
-          sender_id: 'system',
-          sender_name: 'System',
-          content: `Personal chat created between ${userAName} and ${userBName}`,
-          message_type: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        localStorage.setItem('local_chat_messages', JSON.stringify(messages));
-
-        return chat;
-      }
-
-      const { data: chat, error } = await supabase
-        .from('group_chats')
-        .insert([
-          {
-            name,
-            created_by: userAId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // add both members
-      await this.addMember(chat.id, userAId, 'member', userAName, userAEmail);
-      await this.addMember(chat.id, userBId, 'member', userBName, userBEmail);
-
-      // system message
-      await this.sendMessage(chat.id, 'system', 'System', `Personal chat created between ${userAName} and ${userBName}`, 'system');
-
+    const name = `${userAName} & ${userBName}`;
+    if (!supabaseEnabled || !supabase) {
+      const id = `dm-${[userAId, userBId].sort().join('-')}-${Date.now()}`;
+      const chat: any = { id, name, type: 'direct', chat_type: 'direct', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      LS.saveChats([...LS.chats(), chat]);
+      LS.saveMembers([...LS.members(),
+        { id: `${id}-m-${userAId}`, conversation_id: id, group_chat_id: id, user_id: userAId, user_name: userAName, role: 'member', joined_at: new Date().toISOString() },
+        { id: `${id}-m-${userBId}`, conversation_id: id, group_chat_id: id, user_id: userBId, user_name: userBName, role: 'member', joined_at: new Date().toISOString() },
+      ]);
       return chat;
-    } catch (error) {
-      console.error('Error creating personal chat:', error);
-      throw error;
     }
+    const { data: chat, error } = await supabase.from('conversations')
+      .insert([{ name, type: 'direct' }]).select().single();
+    if (error) throw error;
+    await this.addMember(chat.id, userAId, 'member');
+    await this.addMember(chat.id, userBId, 'member');
+    return { ...chat, chat_type: chat.type };
   }
 
-  /**
-   * Get or create a personal chat between two users.
-   */
   async getOrCreatePersonalChat(
-    userAId: string,
-    userAName: string,
-    userAEmail: string,
-    userBId: string,
-    userBName: string,
-    userBEmail: string
+    userAId: string, userAName: string, userAEmail: string,
+    userBId: string, userBName: string, userBEmail: string
   ): Promise<RealGroupChat> {
     const existing = await this.getPersonalChatBetween(userAId, userBId);
     if (existing) return existing;
     return this.createPersonalChat(userAId, userAName, userAEmail, userBId, userBName, userBEmail);
   }
+
+  async getGroupChatByMatchId(_matchId: string): Promise<RealGroupChat | null> { return null; }
+  async sendInvite(conversationId: string, invitedEmail: string): Promise<any> {
+    await this.sendMessage(conversationId, 'system', 'System', `Invite sent to ${invitedEmail} 📧`, 'invite');
+    return {};
+  }
+  async getPendingInvites(_conversationId: string): Promise<any[]> { return []; }
 }
 
 export const realGroupChatService = new RealGroupChatService();

@@ -468,6 +468,16 @@ export const matchesService = {
     try {
       const payload: Record<string, any> = { ...matchData };
 
+      // Map app visibility values to DB allowed values
+const visibilityMap: Record<string, string> = {
+  'community': 'public',
+  'nearby': 'friends', 
+  'private': 'private',
+};
+if (payload.visibility && visibilityMap[payload.visibility]) {
+  payload.visibility = visibilityMap[payload.visibility];
+}
+
       if (!payload.organizer_id && payload.user_id) {
         payload.organizer_id = String(payload.user_id);
       }

@@ -109,10 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Demo account only on localhost
       if (!import.meta.env.PROD && email === 'demo@civita.com' && password === 'demo123') {
         // Use consistent UUID for demo user across sessions
-        const DEMO_USER_UUID = '00000000-0000-0000-0000-000000000001';
-        console.log('🔥 FIXED CODE RUNNING - Demo User UUID:', DEMO_USER_UUID);
+const DEMO_USER_ID = '2917ba82-fdd3-46d2-a8b7-22ec481b3641';
+        console.log('🔥 FIXED CODE RUNNING - Demo User ID:', DEMO_USER_ID);
         const user: User = {
-          id: DEMO_USER_UUID,
+          id: DEMO_USER_ID,
           email: email,
           name: 'Demo User',
           onboarding_completed: true,

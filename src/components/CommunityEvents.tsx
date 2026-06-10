@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ArrowLeft, MapPin, Clock, Users, Trophy, TrendingUp, Search, Filter,
-  Star, Heart, Share2, MessageCircle, ChevronRight, Check, X, Tag
+import {
+  ArrowLeft, MapPin, Clock, Users, Trophy, Star, Check, X, Search
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
 import { toast } from 'sonner';
 import { communityEventsService, CommunityEvent } from '../services/communityEventsService';
 
@@ -15,13 +11,32 @@ interface CommunityEventsProps {
   onNavigate: (page: string) => void;
 }
 
+// ── Category config ───────────────────────────────────────────
+const CATEGORY_CONFIG = {
+  sports:  { emoji: '⚽', label: 'Sports',  grad: ['#f97316','#ef4444'], accent: '#f97316', bg: '#fff7ed' },
+  events:  { emoji: '🎵', label: 'Events',  grad: ['#8b5cf6','#ec4899'], accent: '#8b5cf6', bg: '#fdf4ff' },
+  parties: { emoji: '🎉', label: 'Parties', grad: ['#ec4899','#f97316'], accent: '#ec4899', bg: '#fdf2f8' },
+  gaming:  { emoji: '🎮', label: 'Gaming',  grad: ['#6366f1','#8b5cf6'], accent: '#6366f1', bg: '#f5f3ff' },
+};
+
+const LEVEL_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
+  beginner:     { color: '#16a34a', bg: '#dcfce7', label: 'Beginner' },
+  intermediate: { color: '#d97706', bg: '#fef3c7', label: 'Intermediate' },
+  advanced:     { color: '#dc2626', bg: '#fee2e2', label: 'Advanced' },
+};
+
 export function CommunityEvents({ category, onNavigate }: CommunityEventsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
-  const [filterLevel, setFilterLevel] = useState<string>('all');
+  const [filterLevel, setFilterLevel] = useState('all');
   const [registeredEvents, setRegisteredEvents] = useState<string[]>([]);
 
+  const cfg = CATEGORY_CONFIG[category];
+  const gradCss = `linear-gradient(135deg, ${cfg.grad[0]}, ${cfg.grad[1]})`;
+
   const categoryEvents = communityEventsService.getEventsByCategory(category);
+  const stats = communityEventsService.getEventStats(category);
+
   const filteredEvents = categoryEvents.filter(event => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -29,8 +44,6 @@ export function CommunityEvents({ category, onNavigate }: CommunityEventsProps) 
     const matchesLevel = filterLevel === 'all' || event.level === filterLevel;
     return matchesSearch && matchesLevel;
   });
-
-  const stats = communityEventsService.getEventStats(category);
 
   const handleRegister = (eventId: string) => {
     if (registeredEvents.includes(eventId)) {
@@ -47,339 +60,424 @@ export function CommunityEvents({ category, onNavigate }: CommunityEventsProps) 
     }
   };
 
-  const getCategoryIcon = () => {
-    switch (category) {
-      case 'sports': return '⚽';
-      case 'events': return '🎵';
-      case 'parties': return '🎉';
-      case 'gaming': return '🎮';
-    }
-  };
-
-  const getCategoryColor = () => {
-    switch (category) {
-      case 'sports': return 'from-emerald-500 to-cyan-500';
-      case 'events': return 'from-purple-500 to-pink-500';
-      case 'parties': return 'from-pink-500 to-red-500';
-      case 'gaming': return 'from-indigo-500 to-purple-500';
-    }
-  };
-
-  const getCategoryName = () => {
-    return category.charAt(0).toUpperCase() + category.slice(1);
-  };
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner':
-        return 'bg-green-500/20 text-green-700 border-green-500/30';
-      case 'intermediate':
-        return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30';
-      case 'advanced':
-        return 'bg-red-500/20 text-red-700 border-red-500/30';
-      default:
-        return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
-    }
-  };
+  const fillPct = (e: CommunityEvent) =>
+    Math.min(100, Math.round((e.participants / e.maxParticipants) * 100));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4 mb-4">
-            <button
-              onClick={() => onNavigate(category === 'sports' ? 'dashboard' : `${category}-dashboard`)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6 text-slate-700" />
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">{getCategoryIcon()}</span>
-                <h1 className="text-2xl font-bold text-slate-900">Community Events</h1>
-              </div>
-              <p className="text-sm text-slate-600">Discover and join amazing {getCategoryName()} events</p>
-            </div>
-          </div>
+    <div style={{ minHeight: '100vh', background: '#fafafa', fontFamily: "'DM Sans', sans-serif" }}>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-200">
-              <p className="text-xs text-slate-600">Total Events</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">
-              <p className="text-xs text-slate-600">Upcoming</p>
-              <p className="text-2xl font-bold text-green-600">{stats.upcoming}</p>
-            </div>
-            <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-3 border border-orange-200">
-              <p className="text-xs text-slate-600">Participants</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.totalParticipants.toLocaleString()}</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-200">
-              <p className="text-xs text-slate-600">Avg Rating</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.averageRating.toFixed(1)} ⭐</p>
-            </div>
-          </div>
+      {/* ── Top bar ── */}
+      <div style={{
+        background: '#fff',
+        borderBottom: '1px solid #f0f0f0',
+        position: 'sticky', top: 0, zIndex: 20,
+        padding: '0',
+      }}>
+        {/* Gradient stripe */}
+        <div style={{ height: 4, background: gradCss }} />
 
-          {/* Search and Filter */}
-          <div className="flex gap-2 flex-wrap">
-            <div className="flex-1 min-w-[200px] relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <Input
-                placeholder="Search events..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button onClick={() => onNavigate(category === 'sports' ? 'dashboard' : `${category}-dashboard`)}
+            style={{ background: '#f5f5f5', border: 'none', borderRadius: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <ArrowLeft size={18} style={{ color: '#555' }} />
+          </button>
+
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ fontSize: '1.6rem' }}>{cfg.emoji}</span>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111' }}>Community Events</span>
+              <span style={{
+                fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.65rem',
+                borderRadius: 100, background: cfg.bg, color: cfg.accent,
+                border: `1px solid ${cfg.accent}30`, letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}>{cfg.label}</span>
             </div>
-            {category === 'sports' && (
-              <select
-                value={filterLevel}
-                onChange={(e) => setFilterLevel(e.target.value)}
-                className="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 hover:border-slate-400 transition-colors"
-              >
-                <option value="all">All Levels</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            )}
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#888' }}>Discover and join amazing {cfg.label.toLowerCase()} events</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <AnimatePresence>
-          {selectedEvent ? (
-            // Event Detail View
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-            >
-              <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                {/* Close Button */}
-                <button
-                  onClick={() => setSelectedEvent(null)}
-                  className="sticky top-4 right-4 float-right p-2 bg-slate-100 hover:bg-slate-200 rounded-lg z-10"
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem' }}>
+
+        {/* ── Stat strip ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          {[
+            { label: 'Total Events', value: stats.total, color: cfg.accent },
+            { label: 'Upcoming', value: stats.upcoming, color: '#16a34a' },
+            { label: 'Participants', value: stats.totalParticipants.toLocaleString(), color: '#d97706' },
+            { label: 'Avg Rating', value: `${stats.averageRating.toFixed(1)} ⭐`, color: '#7c3aed' },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{
+              background: '#fff',
+              border: '1px solid #ebebeb',
+              borderTop: `3px solid ${color}`,
+              borderRadius: 12,
+              padding: '0.9rem 1rem',
+            }}>
+              <div style={{ fontSize: '0.68rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>{label}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, color, fontFamily: 'monospace', lineHeight: 1 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Search & filter ── */}
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+            <Search size={15} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
+            <input
+              style={{
+                width: '100%', padding: '0.7rem 1rem 0.7rem 2.4rem',
+                background: '#fff', border: '1px solid #e5e5e5',
+                borderRadius: 10, fontSize: '0.9rem', color: '#111',
+                outline: 'none', boxSizing: 'border-box',
+              }}
+              placeholder="Search events or tags…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+          {category === 'sports' && (
+            <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)} style={{
+              padding: '0.7rem 1rem', background: '#fff',
+              border: '1px solid #e5e5e5', borderRadius: 10,
+              fontSize: '0.88rem', color: '#333', cursor: 'pointer',
+            }}>
+              <option value="all">All Levels</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          )}
+        </div>
+
+        {/* ── Event cards ── */}
+        {filteredEvents.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '4rem', background: '#fff', borderRadius: 16, border: '1px solid #ebebeb' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
+            <p style={{ fontWeight: 700, color: '#111', marginBottom: '0.4rem' }}>No events found</p>
+            <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '1rem' }}>Try adjusting your search or filters</p>
+            <button onClick={() => { setSearchQuery(''); setFilterLevel('all'); }} style={{
+              padding: '0.6rem 1.25rem', background: gradCss, color: '#fff',
+              border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer',
+            }}>Clear Filters</button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+            {filteredEvents.map((event, index) => {
+              const fill = fillPct(event);
+              const isRegistered = registeredEvents.includes(event.id);
+              const levelCfg = LEVEL_CONFIG[event.level];
+              const spotsLeft = event.maxParticipants - event.participants;
+
+              return (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.04 }}
+                  onClick={() => setSelectedEvent(event)}
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #ebebeb',
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    transition: 'box-shadow 0.2s, transform 0.2s',
+                  }}
+                  whileHover={{ y: -4, boxShadow: '0 12px 40px rgba(0,0,0,0.1)' }}
                 >
-                  <X className="w-6 h-6" />
-                </button>
+                  {/* Card banner */}
+                  <div style={{
+                    height: 120,
+                    background: gradCss,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative', overflow: 'hidden',
+                  }}>
+                    {/* Confetti dots */}
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} style={{
+                        position: 'absolute',
+                        width: 8 + (i % 3) * 6, height: 8 + (i % 3) * 6,
+                        borderRadius: '50%',
+                        background: `rgba(255,255,255,${0.08 + i * 0.03})`,
+                        top: `${10 + i * 14}%`, left: `${5 + i * 16}%`,
+                      }} />
+                    ))}
+                    <span style={{ fontSize: '3.5rem', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))', zIndex: 1 }}>{event.image}</span>
+                    {isRegistered && (
+                      <div style={{
+                        position: 'absolute', top: 10, right: 10,
+                        background: '#fff', borderRadius: '50%',
+                        width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      }}>
+                        <Check size={14} style={{ color: '#16a34a' }} />
+                      </div>
+                    )}
+                  </div>
 
-                {/* Event Image/Header */}
-                <div className={`h-48 bg-gradient-to-r ${getCategoryColor()} flex items-center justify-center`}>
-                  <span className="text-9xl">{selectedEvent.image}</span>
-                </div>
+                  <div style={{ padding: '1rem' }}>
+                    {/* Tags row */}
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.6rem' }}>
+                      {event.tags.slice(0, 2).map(tag => (
+                        <span key={tag} style={{
+                          fontSize: '0.68rem', fontWeight: 600,
+                          padding: '0.15rem 0.55rem', borderRadius: 100,
+                          background: cfg.bg, color: cfg.accent,
+                          border: `1px solid ${cfg.accent}25`,
+                        }}>{tag}</span>
+                      ))}
+                      {levelCfg && (
+                        <span style={{
+                          fontSize: '0.68rem', fontWeight: 600,
+                          padding: '0.15rem 0.55rem', borderRadius: 100,
+                          background: levelCfg.bg, color: levelCfg.color,
+                        }}>{levelCfg.label}</span>
+                      )}
+                    </div>
 
-                <div className="p-6 space-y-6">
-                  {/* Title and Basic Info */}
-                  <div>
-                    <h2 className="text-3xl font-bold text-slate-900 mb-3">{selectedEvent.title}</h2>
-                    <div className="flex gap-2 flex-wrap mb-3">
-                      {selectedEvent.tags.map(tag => (
-                        <Badge key={tag} className="bg-slate-100 text-slate-700 border-slate-300">
-                          {tag}
-                        </Badge>
+                    <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#111', margin: '0 0 0.4rem', lineHeight: 1.3 }}>
+                      {event.title}
+                    </h3>
+                    <p style={{ fontSize: '0.8rem', color: '#777', margin: '0 0 0.75rem', lineHeight: 1.5,
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {event.description}
+                    </p>
+
+                    {/* Details */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.75rem' }}>
+                      {[
+                        { icon: Clock, text: `${event.date} · ${event.time}` },
+                        { icon: MapPin, text: event.location },
+                      ].map(({ icon: Icon, text }) => (
+                        <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: '#666' }}>
+                          <Icon size={12} style={{ color: cfg.accent, flexShrink: 0 }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{text}</span>
+                        </div>
                       ))}
                     </div>
-                    <p className="text-slate-600 mb-4">{selectedEvent.description}</p>
 
-                    {/* Key Details */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-start gap-3">
-                        <Clock className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
-                        <div>
-                          <p className="text-xs text-slate-600">Date & Time</p>
-                          <p className="text-slate-900 font-semibold">{selectedEvent.date} at {selectedEvent.time}</p>
-                        </div>
+                    {/* Participants bar */}
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#888', marginBottom: '0.3rem' }}>
+                        <span>{event.participants}/{event.maxParticipants} joined</span>
+                        <span style={{ color: spotsLeft < 5 ? '#dc2626' : '#16a34a', fontWeight: 700 }}>
+                          {spotsLeft} spots left
+                        </span>
                       </div>
-                      <div className="flex items-start gap-3">
-                        <MapPin className="w-5 h-5 text-red-600 mt-1 flex-shrink-0" />
-                        <div>
-                          <p className="text-xs text-slate-600">Location</p>
-                          <p className="text-slate-900 font-semibold">{selectedEvent.location}</p>
-                        </div>
+                      <div style={{ height: 4, background: '#f0f0f0', borderRadius: 100, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${fill}%`, background: gradCss, borderRadius: 100, transition: 'width 0.4s' }} />
                       </div>
-                      <div className="flex items-start gap-3">
-                        <Users className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
-                        <div>
-                          <p className="text-xs text-slate-600">Participants</p>
-                          <p className="text-slate-900 font-semibold">{selectedEvent.participants}/{selectedEvent.maxParticipants}</p>
-                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.75rem', borderTop: '1px solid #f5f5f5' }}>
+                      <div style={{ fontWeight: 900, fontSize: '1.1rem', color: event.registrationFee === 0 ? '#16a34a' : '#111' }}>
+                        {event.registrationFee === 0 ? 'FREE' : `₹${event.registrationFee}`}
                       </div>
-                      {selectedEvent.prize && (
-                        <div className="flex items-start gap-3">
-                          <Trophy className="w-5 h-5 text-yellow-600 mt-1 flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-slate-600">Prize</p>
-                            <p className="text-slate-900 font-semibold">{selectedEvent.prize}</p>
-                          </div>
+                      {event.rating && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <Star size={13} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111' }}>{event.rating}</span>
                         </div>
                       )}
                     </div>
                   </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-                  {/* Level Badge */}
-                  {category === 'sports' && (
-                    <div>
-                      <p className="text-sm text-slate-600 mb-2">Skill Level</p>
-                      <Badge className={getLevelColor(selectedEvent.level)}>
-                        {selectedEvent.level.charAt(0).toUpperCase() + selectedEvent.level.slice(1)}
-                      </Badge>
-                    </div>
+      {/* ── Event detail modal ── */}
+      <AnimatePresence>
+        {selectedEvent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0,
+              background: 'rgba(0,0,0,0.55)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '1rem', zIndex: 50,
+              backdropFilter: 'blur(4px)',
+            }}
+            onClick={() => setSelectedEvent(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: '#fff',
+                borderRadius: 20,
+                maxWidth: 580,
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                boxShadow: '0 32px 80px rgba(0,0,0,0.25)',
+              }}
+            >
+              {/* Modal banner */}
+              <div style={{
+                height: 180, background: gradCss,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', borderRadius: '20px 20px 0 0', overflow: 'hidden',
+              }}>
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} style={{
+                    position: 'absolute',
+                    width: 12 + (i % 4) * 8, height: 12 + (i % 4) * 8,
+                    borderRadius: '50%',
+                    background: `rgba(255,255,255,${0.06 + i * 0.02})`,
+                    top: `${5 + i * 11}%`, left: `${3 + i * 12}%`,
+                  }} />
+                ))}
+                <span style={{ fontSize: '5rem', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.2))', zIndex: 1 }}>
+                  {selectedEvent.image}
+                </span>
+                <button onClick={() => setSelectedEvent(null)} style={{
+                  position: 'absolute', top: 14, right: 14,
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '50%', width: 34, height: 34,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: '#fff',
+                }}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ padding: '1.5rem' }}>
+                {/* Tags */}
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                  {selectedEvent.tags.map(tag => (
+                    <span key={tag} style={{
+                      fontSize: '0.72rem', fontWeight: 700,
+                      padding: '0.2rem 0.65rem', borderRadius: 100,
+                      background: cfg.bg, color: cfg.accent,
+                      border: `1px solid ${cfg.accent}25`,
+                    }}>{tag}</span>
+                  ))}
+                  {LEVEL_CONFIG[selectedEvent.level] && (
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700,
+                      padding: '0.2rem 0.65rem', borderRadius: 100,
+                      background: LEVEL_CONFIG[selectedEvent.level].bg,
+                      color: LEVEL_CONFIG[selectedEvent.level].color,
+                    }}>{LEVEL_CONFIG[selectedEvent.level].label}</span>
                   )}
+                </div>
 
-                  {/* Organizer */}
-                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <p className="text-sm text-slate-600 mb-3">Organized By</p>
-                    <div className="flex items-center gap-3">
-                      <span className="text-4xl">{selectedEvent.organizer.avatar}</span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-slate-900">{selectedEvent.organizer.name}</p>
-                          {selectedEvent.organizer.verified && (
-                            <Check className="w-5 h-5 text-blue-600" />
-                          )}
-                        </div>
-                        {selectedEvent.rating && (
-                          <p className="text-sm text-slate-600">
-                            ⭐ {selectedEvent.rating} ({selectedEvent.reviews} reviews)
-                          </p>
-                        )}
+                <h2 style={{ fontWeight: 900, fontSize: '1.5rem', color: '#111', marginBottom: '0.5rem', lineHeight: 1.2 }}>
+                  {selectedEvent.title}
+                </h2>
+                <p style={{ color: '#666', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                  {selectedEvent.description}
+                </p>
+
+                {/* Key info grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  {[
+                    { icon: Clock, label: 'Date & Time', value: `${selectedEvent.date} · ${selectedEvent.time}`, color: '#4a6ea8' },
+                    { icon: MapPin, label: 'Location', value: selectedEvent.location, color: '#dc2626' },
+                    { icon: Users, label: 'Participants', value: `${selectedEvent.participants}/${selectedEvent.maxParticipants}`, color: '#16a34a' },
+                    ...(selectedEvent.prize ? [{ icon: Trophy, label: 'Prize', value: selectedEvent.prize, color: '#d97706' }] : []),
+                  ].map(({ icon: Icon, label, value, color }) => (
+                    <div key={label} style={{
+                      background: '#fafafa', border: '1px solid #ebebeb',
+                      borderRadius: 10, padding: '0.75rem',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.3rem' }}>
+                        <Icon size={13} style={{ color }} />
+                        <span style={{ fontSize: '0.68rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>{label}</span>
                       </div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111' }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Organizer */}
+                <div style={{
+                  background: '#fafafa', border: '1px solid #ebebeb',
+                  borderRadius: 12, padding: '1rem', marginBottom: '1rem',
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                }}>
+                  <span style={{ fontSize: '2.5rem' }}>{selectedEvent.organizer.avatar}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontWeight: 700, color: '#111', fontSize: '0.9rem' }}>{selectedEvent.organizer.name}</span>
+                      {selectedEvent.organizer.verified && (
+                        <span style={{
+                          background: '#dbeafe', color: '#1d4ed8',
+                          fontSize: '0.65rem', fontWeight: 700, padding: '0.1rem 0.4rem',
+                          borderRadius: 100,
+                        }}>✓ Verified</span>
+                      )}
+                    </div>
+                    {selectedEvent.rating && (
+                      <div style={{ fontSize: '0.8rem', color: '#666', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
+                        <Star size={11} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                        {selectedEvent.rating} · {selectedEvent.reviews} reviews
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Fee + spots */}
+                <div style={{
+                  background: gradCss,
+                  borderRadius: 12, padding: '1rem 1.25rem',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  marginBottom: '1rem',
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Registration Fee</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff', fontFamily: 'monospace' }}>
+                      {selectedEvent.registrationFee === 0 ? 'FREE' : `₹${selectedEvent.registrationFee}`}
                     </div>
                   </div>
-
-                  {/* Fee Info */}
-                  <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-slate-600 mb-1">Registration Fee</p>
-                        <p className="text-2xl font-bold text-slate-900">
-                          {selectedEvent.registrationFee === 0 ? 'FREE' : `₹${selectedEvent.registrationFee}`}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-600 mb-2">Spots Available</p>
-                        <p className="text-2xl font-bold text-emerald-600">
-                          {selectedEvent.maxParticipants - selectedEvent.participants}
-                        </p>
-                      </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Spots Left</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff', fontFamily: 'monospace' }}>
+                      {selectedEvent.maxParticipants - selectedEvent.participants}
                     </div>
                   </div>
+                </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => handleRegister(selectedEvent.id)}
-                      className={`flex-1 text-lg py-6 font-semibold transition-all ${
-                        registeredEvents.includes(selectedEvent.id)
-                          ? 'bg-red-500 hover:bg-red-600 text-white'
-                          : `bg-gradient-to-r ${getCategoryColor()} hover:shadow-lg text-white`
-                      }`}
-                    >
-                      {registeredEvents.includes(selectedEvent.id) ? 'Cancel Registration' : 'Register Now'}
-                    </Button>
-                    <Button className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900">
-                      Share Event
-                    </Button>
-                  </div>
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button
+                    onClick={() => handleRegister(selectedEvent.id)}
+                    style={{
+                      flex: 1, padding: '0.875rem',
+                      background: registeredEvents.includes(selectedEvent.id) ? '#fee2e2' : gradCss,
+                      color: registeredEvents.includes(selectedEvent.id) ? '#dc2626' : '#fff',
+                      border: registeredEvents.includes(selectedEvent.id) ? '1.5px solid #fca5a5' : 'none',
+                      borderRadius: 12, fontWeight: 800, fontSize: '0.95rem',
+                      cursor: 'pointer', transition: 'opacity 0.2s',
+                    }}
+                  >
+                    {registeredEvents.includes(selectedEvent.id) ? 'Cancel Registration' : 'Register Now →'}
+                  </button>
+                  <button style={{
+                    padding: '0.875rem 1.25rem',
+                    background: '#f5f5f5', border: 'none',
+                    borderRadius: 12, fontWeight: 700, fontSize: '0.875rem',
+                    color: '#555', cursor: 'pointer',
+                  }}>
+                    Share
+                  </button>
                 </div>
               </div>
             </motion.div>
-          ) : (
-            // Events Grid
-            <div>
-              {filteredEvents.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-slate-600 text-lg">No events found</p>
-                  <Button
-                    onClick={() => setSearchQuery('')}
-                    className="mt-4 bg-slate-800 hover:bg-slate-700 text-white"
-                  >
-                    Clear Search
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredEvents.map((event, index) => (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      onClick={() => setSelectedEvent(event)}
-                      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer border border-slate-200 hover:border-slate-400 group"
-                    >
-                      {/* Image */}
-                      <div className={`h-40 bg-gradient-to-r ${getCategoryColor()} flex items-center justify-center overflow-hidden`}>
-                        <span className="text-7xl group-hover:scale-110 transition-transform">{event.image}</span>
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-bold text-slate-900 line-clamp-2 flex-1">{event.title}</h3>
-                          {registeredEvents.includes(event.id) && (
-                            <Check className="w-5 h-5 text-green-600 flex-shrink-0 ml-2" />
-                          )}
-                        </div>
-
-                        <p className="text-sm text-slate-600 line-clamp-2 mb-3">{event.description}</p>
-
-                        {/* Tags */}
-                        <div className="flex gap-1 flex-wrap mb-3">
-                          {event.tags.slice(0, 2).map(tag => (
-                            <Badge key={tag} className="text-xs bg-slate-100 text-slate-700">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-
-                        {/* Details */}
-                        <div className="space-y-2 mb-3 text-sm">
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <Clock className="w-4 h-4" />
-                            <span>{event.date}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <MapPin className="w-4 h-4" />
-                            <span className="truncate">{event.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <Users className="w-4 h-4" />
-                            <span>{event.participants}/{event.maxParticipants} joined</span>
-                          </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-                          <div>
-                            {event.registrationFee === 0 ? (
-                              <p className="text-lg font-bold text-green-600">FREE</p>
-                            ) : (
-                              <p className="text-lg font-bold text-slate-900">₹{event.registrationFee}</p>
-                            )}
-                          </div>
-                          {event.rating && (
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                              <span className="text-sm font-semibold text-slate-900">{event.rating}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
