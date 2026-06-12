@@ -24,6 +24,27 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+function createSportIcon(sport: string) {
+  const emojis: Record<string, string> = {
+    Football: '\u26BD', Cricket: '\uD83C\uDFCF', Basketball: '\uD83C\uDFC0',
+    Tennis: '\uD83C\uDFBE', Badminton: '\uD83C\uDFF8', Swimming: '\uD83C\uDFCA',
+    Volleyball: '\uD83C\uDFD0', Running: '\uD83C\uDFC3', Gym: '\uD083\uDCAA',
+  };
+  const colors: Record<string, string> = {
+    Football: '#0CA678', Cricket: '#3B5BDB', Basketball: '#E8590C',
+    Tennis: '#D4A017', Badminton: '#7C3AED', Swimming: '#0284C7',
+  };
+  const emoji = emojis[sport] || '\uD83C\uDFAF';
+  const color = colors[sport] || '#3B5BDB';
+
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:44px;height:44px;background:white;border:3px solid ${color};border-radius:50%;box-shadow:0 4px 14px ${color}66;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;">${emoji}</div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 44],
+    popupAnchor: [0, -46],
+  });
+}
 interface MapEvent {
   id: string;
   title: string;
@@ -379,6 +400,7 @@ export function MapView({ onClose, category = 'all', events }: MapViewProps) {
                   <Marker
                     key={event.id}
                     position={[event.lat!, event.lng!]}
+                    icon={createSportIcon(event.type || '')}
                     eventHandlers={{ click: () => setSelectedEvent(event) }}
                   >
                     <Popup>

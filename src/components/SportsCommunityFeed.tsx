@@ -10,6 +10,7 @@ import { ActivityHeatmap } from './ActivityHeatmap';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase, supabaseEnabled } from '../lib/supabaseClient';
 
 /* ── Theme: "The Clubhouse" ─────────────────────────────────────
    Warm cream base, ink headings, three bold zone identities.
@@ -66,28 +67,6 @@ const ZONES = {
   },
 };
 
-const UPCOMING = [
-  {
-    id: 'u1', sport: '⚽', title: 'Football Match', venue: 'Sky Sports Arena',
-    players: 10, dist: '0.8 km', time: 'Today, 4:00 PM', slots: 2,
-    color: '#0CA678', tag: 'Open',
-  },
-  {
-    id: 'u2', sport: '🏀', title: 'Basketball Pickup', venue: 'Central Court',
-    players: 8, dist: '1.2 km', time: 'Today, 6:30 PM', slots: 4,
-    color: '#E8590C', tag: 'Open',
-  },
-  {
-    id: 'u3', sport: '🏏', title: 'Cricket Practice', venue: 'Jaipur Oval',
-    players: 16, dist: '2.1 km', time: 'Tomorrow, 7:00 AM', slots: 0,
-    color: '#3B5BDB', tag: 'Full',
-  },
-  {
-    id: 'u4', sport: '🎾', title: 'Tennis Doubles', venue: 'Club Greens',
-    players: 3, dist: '0.5 km', time: 'Tomorrow, 9:00 AM', slots: 1,
-    color: '#D4A017', tag: 'Almost Full',
-  },
-];
 
 const SPORT_TAGS = [
   { emoji: '🏀', label: 'Basketball', color: '#E8590C' },
@@ -503,6 +482,22 @@ function SectionHeading({ label, color, action }) {
   );
 }
 
+function getSportEmoji(sport: string): string {
+  const map: Record<string, string> = {
+    Football: '⚽', Cricket: '🏏', Basketball: '🏀',
+    Tennis: '🎾', Badminton: '🏸', Swimming: '🏊', Volleyball: '🏐',
+  };
+  return map[sport] || '🎯';
+}
+
+function getSportColor(sport: string): string {
+  const map: Record<string, string> = {
+    Football: '#0CA678', Cricket: '#3B5BDB', Basketball: '#E8590C',
+    Tennis: '#D4A017', Badminton: '#7C3AED', Swimming: '#0284C7',
+  };
+  return map[sport] || '#3B5BDB';
+}
+
 /* ── Main ────────────────────────────────────────────────────── */
 export function SportsCommunityFeed({ onNavigate }) {
   const [activeZone, setActiveZone] = useState('notifications');
@@ -510,6 +505,70 @@ export function SportsCommunityFeed({ onNavigate }) {
   const [newPost, setNewPost] = useState('');
   const [files, setFiles] = useState([]);
   const [posting, setPosting] = useState(false);
+
+  const [upcoming, setUpcoming] = useState([]);
+
+useEffect(() => {
+  if (!supabaseEnabled || !supabase) return;
+
+  // Initial fetch
+  supabase
+    .from('matches')
+    .select('*')
+    .in('status', ['open', 'upcoming'])
+    .in('visibility', ['community', 'nearby', 'public', 'Public'])
+    .gte('date', new Date().toISOString().split('T')[0])
+    .order('date', { ascending: true })
+    .limit(10)
+    .then(({ data }) => {
+      if (data) setUpcoming(data.map(m => ({
+        id: m.id,
+        sport: getSportEmoji(m.sport),
+        title: m.title,
+        venue: m.turf_name,
+        players: m.current_players ?? 0,
+        dist: '—',
+        time: `${m.date} ${m.time?.slice(0,5) ?? ''}`,
+        slots: Math.max(0, (m.max_players ?? m.min_players) - (m.current_players ?? 0)),
+        color: getSportColor(m.sport),
+        tag: m.current_players >= (m.max_players ?? m.min_players) ? 'Full' : 'Open',
+      })));
+    });
+
+  // Realtime — new match appears instantly
+  const channel = supabase
+    .channel('community-matches')
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'matches',
+    }, () => {
+      // Re-fetch on any change
+      supabase
+        .from('matches')
+        .select('*')
+        .in('status', ['open', 'upcoming'])
+        .in('visibility', ['community', 'nearby', 'public', 'Public'])
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .limit(10)
+        .then(({ data }) => {
+          if (data) setUpcoming(data.map(m => ({
+            id: m.id,
+            sport: getSportEmoji(m.sport),
+            title: m.title,
+            venue: m.turf_name,
+            players: m.current_players ?? 0,
+            dist: '—',
+            time: `${m.date} ${m.time?.slice(0,5) ?? ''}`,
+            slots: Math.max(0, (m.max_players ?? m.min_players) - (m.current_players ?? 0)),
+            color: getSportColor(m.sport),
+            tag: m.current_players >= (m.max_players ?? m.min_players) ? 'Full' : 'Open',
+          })));
+        });
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+}, []);
 
   useEffect(() => { window.scrollTo(0, 0); }, [activeZone]);
 
@@ -709,8 +768,10 @@ export function SportsCommunityFeed({ onNavigate }) {
 
                   {/* Match list */}
                   <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {UPCOMING.map((m, i) => <MatchCard key={m.id} match={m} index={i} />)}
-                  </div>
+{upcoming.length === 0
+  ? <div style={{ textAlign: 'center', padding: '2rem', color: THEME.muted, fontSize: 14 }}>No upcoming matches yet — be the first to create one!</div>
+  : upcoming.map((m, i) => <MatchCard key={m.id} match={m} index={i} />)
+}                  </div>
                 </div>
 
                 {/* Community post composer */}

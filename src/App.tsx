@@ -75,7 +75,7 @@ interface Match {
   date: string;
   time: string;
   sport: string;
-  status: 'upcoming' | 'completed';
+  status: 'upcoming' | 'completed' ;
   visibility: string;
   paymentOption: string;
   amount?: number;
@@ -583,7 +583,6 @@ function AppContent() {
 );
 
 const matchWithChat = { ...match, id: persistedMatchId, groupChatId: conversation.id };
-matchNotificationService.saveMatchToDiscoverable(matchWithChat);
 
 navigateTo('modern-chat', undefined, persistedMatchId, undefined, conversation.id);
 

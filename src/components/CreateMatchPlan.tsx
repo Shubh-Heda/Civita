@@ -24,7 +24,7 @@ interface CreateMatchPlanProps {
     date: string;
     time: string;
     sport: string;
-    status: 'upcoming' | 'completed';
+    status: 'upcoming' | 'completed' ;
     visibility: string;
     paymentOption: string;
     amount?: number;
@@ -241,8 +241,23 @@ export function CreateMatchPlan({ onNavigate, onMatchCreate }: CreateMatchPlanPr
       visibility: visibility as 'community' | 'nearby' | 'private',
     };
 
-    matchNotificationService.saveMatchToDiscoverable(notificationData);
-    matchNotificationService.notifyNewMatchCreated(notificationData, user?.id || 'user');
+    await matchNotificationService.saveMatchToDiscoverable({
+  title: match.title,
+  sport: match.sport,
+  turf_name: match.turfName,
+  location: match.location,
+  latitude: match.lat ?? 23.0225,
+  longitude: match.lng ?? 72.5714,
+  date: match.date,
+  time: match.time,
+  min_players: match.minPlayers ?? 6,
+  max_players: match.maxPlayers ?? 10,
+  visibility: visibility,
+  organizer_id: user?.id || '',
+  organizer_name: organizerName,
+});
+
+await matchNotificationService.notifyNewMatchCreated(notificationData);
 
     try {
       await onMatchCreate(match);
